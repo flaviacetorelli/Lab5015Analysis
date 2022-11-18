@@ -58,7 +58,7 @@ upEnergyCut15 = {
 }
 
 
-energyCut35 = {
+downEnergyCut35 = {
 "00" :"50",
 "02" :"1",
 "03" :"20",
@@ -74,6 +74,24 @@ energyCut35 = {
 "13" :"20" ,
 "14" :"20",
 }
+
+upEnergyCut35 = {
+"00" :"50",
+"02" :"1",
+"03" :"20",
+"04" :"5",
+"05" :"5",
+"06" :"0",
+"07" :"50",
+"08" :"20",
+"09" :"10",
+"10" :"20",
+"11" :"20",
+"12" :"0" ,
+"13" :"20" ,
+"14" :"20",
+}
+
 
 upEnergyCut = upEnergyCut15
 downEnergyCut = downEnergyCut15
@@ -119,12 +137,12 @@ for l in ["L","R"]:
     #tree.Draw("(8*0.313)/tot"+l+">>histo_"+b+"_"+l, "(energyL+energyR)/2 > 10", "histo")
     tree.Draw("(8*0.313)/tot"+l+">>histo_"+b+"_"+l, "(energyL+energyR)/2 > "+downEnergyCut[b]+" && (energyL+energyR)/2 < "+upEnergyCut[b] , "histo")
     histo.SetLineColor(2)
-    gauss35 = ROOT.TF1("","gaus", 5,30)
-    gauss15 = ROOT.TF1("","gaus", 2,12)
+    #gauss35 = ROOT.TF1("","gaus", 5,30)
+    #gauss15 = ROOT.TF1("","gaus", 2,12)
 
-    if vov == "1.50": gauss = gauss15
-    else: gauss = gauss35  
-
+    #if vov == "1.50": gauss = gauss15
+    #else: gauss = gauss35  
+    gauss = ROOT.TF1("", "gaus", histo.GetMean() - 2* histo.GetRMS(), histo.GetMean() + 2* histo.GetRMS())
     gauss.SetParameter(1, histo.GetMean())
     histo.Fit(gauss, "QR")
     SRlocal = gauss.GetParameter(1)
@@ -164,13 +182,11 @@ for l in ["L","R"]:
     # graph with the results
     if ( SRpulse > 0 and SRlocal > 0 and  SRpulse < 40 and SRlocal < 40):
     	if l == "L": 
-          gsumL.SetPoint(index, SRlocal, SRpulse)
-    	  gsumL.SetPointError( index , SRlocalErr, SRpulseErr)
-          index = index + 1
+          gsumL.SetPoint(gsumL.GetN(), SRlocal, SRpulse)
+    	  gsumL.SetPointError( gsumL.GetN()-1 , SRlocalErr, SRpulseErr)
     	else: 
-          gsumR.SetPoint(index, SRlocal, SRpulse)
-    	  gsumR.SetPointError( index , SRlocalErr, SRpulseErr)
-          index = index + 1
+          gsumR.SetPoint(gsumR.GetN(), SRlocal, SRpulse)
+    	  gsumR.SetPointError( gsumR.GetN()-1 , SRlocalErr, SRpulseErr)
 
         hlocal.Fill(SRlocal)
         hpulse.Fill(SRpulse)
@@ -194,8 +210,10 @@ gsumMean = ROOT.TGraphErrors()
 
 gsumMean.SetTitle(";  SR local ; SR pulse shape")
 for i in range(0,len(bars)):
-  gsumMean.SetPoint(i, (gsumL.GetPointX(i)+gsumR.GetPointX(i))/2., (gsumL.GetPointY(i)+gsumR.GetPointY(i))/2.)
-  print (gsumL.GetPointX(i)  , "       ", gsumR.GetPointX(i) , "      ", (gsumL.GetPointX(i)+gsumR.GetPointX(i))/2. )
+  gsumMean.SetPoint(gsumMean.GetN(), (gsumL.GetPointX(gsumMean.GetN())+gsumR.GetPointX(gsumMean.GetN()))/2., (gsumL.GetPointY(gsumMean.GetN())+gsumR.GetPointY(gsumMean.GetN()))/2.)
+  gsumMean.SetPointError(gsumMean.GetN()-1, (gsumL.GetErrorX(gsumMean.GetN()-1)+gsumR.GetErrorX(gsumMean.GetN()))/2., 
+                                            (gsumL.GetErrorY(gsumMean.GetN()-1)+gsumR.GetErrorY(gsumMean.GetN()-1))/2.)
+  #print (gsumL.GetPointX(i)  , "       ", gsumR.GetPointX(i) , "      ", (gsumL.GetPointX(i)+gsumR.GetPointX(i))/2. )
 
 f = ROOT.TF1("bisect","x",0,20) 
 f.SetLineColor(2)
