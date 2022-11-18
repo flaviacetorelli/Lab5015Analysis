@@ -36,7 +36,6 @@
 
 
 using namespace std;
-
 void ilTriangoloNo(float s12, float s23, float s13, float err_s12, float err_s23, float err_s13, std::vector<float> &result, std::vector<float> &err) {
   
   float s1 = sqrt( 0.5 * ( s12*s12 + s13*s13 - s23*s23) );
@@ -58,6 +57,80 @@ void ilTriangoloNo(float s12, float s23, float s13, float err_s12, float err_s23
 
 
 
+void triangulation(std::vector<int> barList, map<int,TH1F*> hLR, map<std::string,TH1F*> hsingle, TGraphErrors *g_tRes_Corr_LR, map<std::string,TGraphErrors*> g_tRes_Corr, TGraphErrors *g_tRes_L, TGraphErrors *g_tRes_R, TGraphErrors *g_tRes_chRef) {
+  std::cout << "Triangulation ..." << std::endl;
+ 
+  for (int iBar = 0 ; iBar < 16; iBar++){
+    bool barFound = std::find(barList.begin(), barList.end(), iBar) != barList.end() ;
+    if (!barFound) continue;
+ 
+    if (hLR[iBar] -> GetEntries() == 0) continue;
+    if (hsingle[ Form("bar%02dR", iBar)] -> GetEntries() == 0) continue;
+    if (hsingle[ Form("bar%02dL", iBar)] -> GetEntries() == 0) continue;
+
+    
+    float tRes_L_R = 0;
+    float tRes_L_chRef = 0;
+    float tRes_R_chRef = 0;
+
+    float err_tRes_L_R = 0;
+    float err_tRes_L_chRef = 0;
+    float err_tRes_R_chRef = 0;
+    
+    for ( int i = 0; i < g_tRes_Corr_LR-> GetN(); i++){
+      if (  int(g_tRes_Corr_LR -> GetPointX(i)) == iBar) {
+	tRes_L_R = g_tRes_Corr_LR-> GetPointY(i);
+	err_tRes_L_R = g_tRes_Corr_LR-> GetErrorY(i);
+	break;
+      }
+    }
+
+    for ( int i = 0; i < g_tRes_Corr["L"]-> GetN(); i++){
+      if (  g_tRes_Corr["L"]-> GetPointX(i) == iBar) {
+	tRes_L_chRef = g_tRes_Corr["L"]-> GetPointY(i);
+	err_tRes_L_chRef = g_tRes_Corr["L"]-> GetErrorY(i);
+	break;
+      }
+    }
+
+    for ( int i = 0; i < g_tRes_Corr["R"]-> GetN(); i++){
+      if (  g_tRes_Corr["R"]-> GetPointX(i) == iBar) {
+	tRes_R_chRef = g_tRes_Corr["R"]-> GetPointY(i);
+	err_tRes_R_chRef = g_tRes_Corr["R"]-> GetErrorY(i);
+	break;
+      }
+    }
+
+
+    //cout <<  "  *** " << tRes_L_R << "   " << tRes_R_chRef  << "   " << tRes_L_chRef <<endl;
+    if ( tRes_L_R==0 || tRes_R_chRef==0 || tRes_L_chRef==0) continue;    
+
+    std::vector<float> tRes, err_tRes ;
+    tRes.clear();
+    err_tRes.clear();
+
+    ilTriangoloNo(tRes_L_R,tRes_R_chRef,tRes_L_chRef, err_tRes_L_R, err_tRes_R_chRef, err_tRes_L_chRef, tRes, err_tRes);
+    
+    if ( !isnan(tRes[0]) ) g_tRes_L -> SetPoint( g_tRes_L->GetN(), iBar, tRes[0]);
+    if ( !isnan(tRes[1]) ) g_tRes_R -> SetPoint( g_tRes_R->GetN(), iBar, tRes[1]);
+    if ( !isnan(tRes[2]) ) g_tRes_chRef -> SetPoint( g_tRes_chRef->GetN(), iBar, tRes[2]);
+
+    if ( err_tRes[0]>=0 ) g_tRes_L -> SetPointError( g_tRes_L->GetN()-1, 0, err_tRes[0]);
+    if ( err_tRes[1]>=0 ) g_tRes_R -> SetPointError( g_tRes_R->GetN()-1, 0, err_tRes[1]);
+    if ( err_tRes[2]>=0 ) g_tRes_chRef -> SetPointError( g_tRes_chRef->GetN()-1, 0, err_tRes[2]);
+
+    //cout <<  "  ***  BELLA DEBUGGING ***  " << endl; 
+    //cout <<  "  *** " << tRes[0] << "   " << tRes[1]  << "   " << tRes[2]  <<endl;
+    //cout <<  "  *** " << g_tRes_L -> GetPointY( g_tRes_L->GetN()) << "   " << g_tRes_R -> GetPointY( g_tRes_R->GetN())  << "   " << g_tRes_chRef -> GetPointY( g_tRes_chRef->GetN()) <<endl;
+   //cout <<  "                             " << endl; 
+  }
+
+}
+
+
+
+
+
 void getTimeResolution(TH1F *histo, TF1 *& fitFunc){
 
   float fitXMin = histo->GetBinCenter(histo->GetMaximumBin()) - 200.;
@@ -73,6 +146,94 @@ void getTimeResolution(TH1F *histo, TF1 *& fitFunc){
   histo -> SetMaximum(histo->GetMaximum()+0.1*histo->GetMaximum());
   histo -> GetXaxis() -> SetRangeUser(fitFunc->GetParameter(1)-7.*fitFunc->GetParameter(2),fitFunc->GetParameter(1)+7.*fitFunc->GetParameter(2));
  }
+
+void plotTimeResolution(TGraphErrors *g_tRes_L,TGraphErrors *g_tRes_R, TGraphErrors *g_tRes_chRef, float ymin, float ymax, bool useTimeAverage,int color, string plotDir, string label ){
+  //cout << "     DEBUG                         "  << label.c_str() << endl;
+  //g_tRes_L -> Print();
+  //g_tRes_R -> Print();
+  //g_tRes_chRef -> Print();
+  //cout << "                             "   << endl;
+   
+  TCanvas *c = new TCanvas("c","c", 800, 600);
+  c->SetGridx();
+  c->SetGridy();
+  //if ( step1 == 1.50){
+  //  ymax = 160;
+  //}
+  TH2F* hdummy = new TH2F("hdummy","",16,-0.5,15.5,100,ymin,ymax);
+  hdummy->GetXaxis()->SetTitle("bar");
+  hdummy->GetYaxis()->SetTitle("#sigma_{t} [ps]");
+  hdummy->Draw();
+  g_tRes_L ->SetName(Form("%s_L", label.c_str()));
+  g_tRes_L ->SetMarkerStyle(20);
+  g_tRes_L -> SetLineColor(color);
+  g_tRes_L -> SetMarkerColor(color);
+  g_tRes_R ->SetName(Form("%s_R", label.c_str()));
+  g_tRes_R -> SetMarkerStyle(24);
+  g_tRes_R -> SetLineColor(color);
+  g_tRes_R -> SetMarkerColor(color);
+  g_tRes_chRef ->SetName(Form("%s_chRef", label.c_str()));
+  g_tRes_chRef ->SetMarkerStyle(21);
+  g_tRes_chRef ->SetMarkerColor(12);
+  g_tRes_chRef ->SetLineColor(12);
+  g_tRes_L->Draw("psame") ;
+  g_tRes_R->Draw("psame") ;
+  g_tRes_chRef->Draw("psame") ;
+
+  TLegend *leg = new TLegend(0.20, 0.78, 0.35, 0.88);
+  leg->SetBorderSize(0);
+  leg->SetFillStyle(0);
+  leg->AddEntry(g_tRes_L, "L", "P");
+  leg->AddEntry(g_tRes_R, "R", "P");
+  if (useTimeAverage) leg->AddEntry(g_tRes_chRef, "Ref (average)", "P");
+  else leg->AddEntry(g_tRes_chRef, "Ref (single)", "P");
+  leg->Draw("same");
+
+  TF1 *myfitL = new TF1("myfitL","pol0", 0, 100);
+  myfitL -> SetLineColor(color);
+  myfitL -> SetParameter(0, g_tRes_L -> GetMean(2));
+  g_tRes_L ->Fit("myfitL");
+  TLatex *latexL = new TLatex(0.50,0.88,Form("<#sigma_{t}> = %.1f #pm %.1f ps", myfitL->GetParameter(0), myfitL->GetParError(0)));
+  latexL -> SetNDC();
+  latexL -> SetTextFont(42);
+  latexL -> SetTextSize(0.04);
+  latexL->Draw("same");
+  TF1 *myfitR = new TF1("myfitR","pol0", 0, 100);
+  myfitR -> SetLineColor(color);
+  myfitR -> SetLineStyle(2);
+  myfitR -> SetParameter(0, g_tRes_R -> GetMean(2));
+  g_tRes_R ->Fit("myfitR");
+  TLatex *latexR = new TLatex(0.50,0.83,Form("<#sigma_{t}> = %.1f #pm %.1f ps", myfitR->GetParameter(0), myfitR->GetParError(0)));
+  latexR -> SetNDC();
+  latexR -> SetTextFont(42);
+  latexR -> SetTextSize(0.04);
+  latexR->Draw("same");
+  TF1 *myfitChRef = new TF1("myfitChRef","pol0", 0, 100);
+  myfitChRef -> SetLineColor(12);
+  myfitChRef -> SetParameter(0,g_tRes_chRef -> GetMean(2));
+  g_tRes_chRef ->Fit("myfitChRef");
+  TLatex *latexRef = new TLatex(0.50,0.78,Form("<#sigma_{t}> = %.1f #pm %.1f ps", myfitChRef->GetParameter(0), myfitChRef->GetParError(0)));
+  latexRef -> SetNDC();
+  latexRef -> SetTextFont(42);
+  latexRef -> SetTextSize(0.04);
+  latexRef->Draw("same");
+  
+  std::cout << "L    : " <<  "   <sigma_t> = " << myfitL->GetParameter(0) << "+/-" << myfitL->GetParError(0) <<std::endl;
+  std::cout << "R    : " <<  "   <sigma_t> = " << myfitR->GetParameter(0) << "+/-" << myfitR->GetParError(0) <<std::endl;
+  std::cout << "ChRef: " <<  "   <sigma_t> = " << myfitChRef->GetParameter(0) << "+/-" << myfitChRef->GetParError(0) <<std::endl;
+
+  c->Print(Form("%s/c_tRes_%s.png",plotDir.c_str(), label.c_str()));
+  c->Print(Form("%s/c_tRes_%s.pdf",plotDir.c_str(), label.c_str()));
+  c->SaveAs(Form("%s/c_tRes_%s.root",plotDir.c_str(), label.c_str()));
+ // delete c;
+ // delete myfitL;
+ // delete myfitR;
+ // delete myfitChRef;
+ // delete latexL;
+ // delete latexR;
+ // delete latexRef;
+
+}
 
 
 // ================================================
@@ -153,7 +314,7 @@ int main(int argc, char** argv){
       std::istringstream ss(line);
       ss >> bar >> ov >> side >> value;
       offsetCh[std::make_pair(bar,side)] = value * 1000; // from nano to pico
-
+      std::cout<< bar <<  "   " << side << "  " << offsetCh[std::make_pair(bar,side)] <<std::endl;
     }
   }
   else{
@@ -165,7 +326,7 @@ int main(int argc, char** argv){
     }
   }
 
-
+  
 
   
   // --- reading tree
@@ -217,7 +378,7 @@ int main(int argc, char** argv){
   //  int maxEntries = 200000;
   int maxEntries = nEntries;
   
-  //int maxEntries = 20000000;
+  //int maxEntries = 2000000;
 
 
   // -- book histograms 
@@ -264,8 +425,8 @@ int main(int argc, char** argv){
   map<int,TH1F*>      h_totRatio_LR;
   map<int,TProfile*>  p_deltaT_LR_energyRatioCorr_vs_totRatio;
   map<int,TH1F*>      h_deltaT_LR_energyRatioCorr_totRatioCorr;
-
-
+  map<int,TProfile*>  p_deltaT_LR_energyRatioCorr_totRatioCorr_vs_t1fine;
+  map<int,TH1F*>      h_deltaT_LR_energyRatioCorr_totRatioCorr_phaseCorr;
 
   for(int iBar = 0; iBar < 16; ++iBar){        
     
@@ -282,8 +443,8 @@ int main(int argc, char** argv){
     h_totRatio_LR[iBar] = new TH1F(Form("h_totRatio_LR_bar%02d", iBar), Form("h_totRatio_LR_bar%02d", iBar), 100, 0, 3);
     h_deltaT_LR_energyRatioCorr_totRatioCorr[iBar] = new TH1F(Form("h_deltaT_LR_energyRatioCorr_totRatioCorr_bar%02d", iBar), Form("h_deltaT_LR_energyRatioCorr_totRatioCorr_bar%02d", iBar), 1000, -12000, 12000);
     p_deltaT_LR_energyRatioCorr_vs_totRatio[iBar] = new TProfile(Form("p_deltaT_LR_energyRatioCorr_vs_totRatio_bar%02d",iBar), Form("p_deltaT_LR_energyRatioCorr_vs_totRatio_bar%02d",iBar), 60, 0, 3);
-
-
+    h_deltaT_LR_energyRatioCorr_totRatioCorr_phaseCorr[iBar] = new TH1F(Form("h_deltaT_LR_energyRatioCorr_totRatioCorr_phaseCorr_bar%02d", iBar), Form("h_deltaT_LR_energyRatioCorr_totRatioCorr_phaseCorr_bar%02d", iBar), 1000, -12000, 12000);
+    p_deltaT_LR_energyRatioCorr_totRatioCorr_vs_t1fine[iBar] = new TProfile(Form("p_deltaT_LR_energyRatioCorr_totRatioCorr_vs_t1fine_bar%02d",iBar), Form("p_deltaT_LR_energyRatioCorr_totRatioCorr_vs_t1fine_bar%02d",iBar), 50, 0, 1000);
     for (auto label : labelLR ){
       std::string chLabel = Form("bar%02d%s", iBar, label.c_str());
       
@@ -484,6 +645,7 @@ int main(int argc, char** argv){
 	
 	float energyRatio = (*energy)[channelIdx[ch]]/energyRef ;
 	float totRatio = ((*tot)[channelIdx[ch]]-offsetCh[std::make_pair(iBar , label.c_str())])/totRef ;
+        // cout << iBar << " " << label.c_str() << " " << (*tot)[channelIdx[ch]] << "  - " << offsetCh[std::make_pair(iBar , label.c_str())] <<   " = " << totRatio << endl; 
 	
 	h_deltaT[chLabel]   -> Fill( deltaT );	
 	h_energyRatio[chLabel] -> Fill( energyRatio );	
@@ -706,6 +868,9 @@ int main(int argc, char** argv){
 	h_deltaT_energyRatioCorr_phaseCorr[chLabel] -> Fill( deltaT - energyRatioCorr - phaseCorr);
 	h_deltaT_energyRatioCorr_totRatioCorr[chLabel] -> Fill( deltaT - energyRatioCorr - energyRatioCorr_totRatioCorr);
 
+        p_deltaT_energyRatioCorr_totRatioCorr_vs_t1fine[chLabel] -> Fill( (*t1fine)[channelIdx[ch]] , deltaT - energyRatioCorr - energyRatioCorr_totRatioCorr);
+        h2_deltaT_energyRatioCorr_totRatioCorr_vs_t1fine[chLabel] -> Fill( (*t1fine)[channelIdx[ch]], deltaT - energyRatioCorr - energyRatioCorr_totRatioCorr);
+
 	p_deltaT_energyRatioCorr_phaseCorr_vs_t1fineRef[chLabel]  -> Fill( (*t1fine)[channelIdx[chRef2]] , deltaT - energyRatioCorr - phaseCorr);
 	h2_deltaT_energyRatioCorr_phaseCorr_vs_t1fineRef[chLabel] -> Fill( (*t1fine)[channelIdx[chRef2]] , deltaT - energyRatioCorr - phaseCorr);
 
@@ -733,6 +898,8 @@ int main(int argc, char** argv){
 	if ( fabs(deltaT)<10000 && fabs(deltaT-energyRatioCorr)<10000 && fabs(deltaT-energyRatioCorr- energyRatioCorr_totRatioCorr)<10000){
 	  h_deltaT_LR_energyRatioCorr_phaseCorr[iBar] -> Fill( deltaT - energyRatioCorr - phaseCorr);
 	  h_deltaT_LR_energyRatioCorr_totRatioCorr[iBar] -> Fill( deltaT - energyRatioCorr - energyRatioCorr_totRatioCorr);
+          p_deltaT_LR_energyRatioCorr_totRatioCorr_vs_t1fine[iBar] -> Fill(0.5*( (*t1fine)[channelIdx[chL]]+(*t1fine)[channelIdx[chR]]) ,deltaT - energyRatioCorr - energyRatioCorr_totRatioCorr);
+
 	}
       }
       
@@ -740,26 +907,107 @@ int main(int argc, char** argv){
   }  
   
 
+
+  cout << "Fifth loop over events to apply phase corrections : on top of tot" <<endl;
+  for (int entry = 0; entry < maxEntries; entry++){
+    
+    if( entry%1000 == 0 ) std::cout << ">>> Reading entry " << entry << " / " << nEntries << "\r" << std::flush;
+    data ->GetEntry(entry);
+
+    if ( !acceptEvent_chRef[entry] ) continue;
+    float energyRef = 0.5*((*energy)[channelIdx[chRef1]]+(*energy)[channelIdx[chRef2]]);
+    float  totRef = 0.5*((*tot)[channelIdx[chRef1]]+(*tot)[channelIdx[chRef2]]);
+    long long tRef = 0.5*((*time)[channelIdx[chRef1]]+(*time)[channelIdx[chRef2]]);
+    if ( !useTimeAverage) {
+      energyRef  = (*energy)[channelIdx[chRef1]];
+      totRef  = (*tot)[channelIdx[chRef1]];
+      tRef       = (*time)[channelIdx[chRef1]];
+    }
+
+    // -- single channels
+    for(int iBar = 0; iBar < 16; ++iBar){        
+      for (auto label : labelLR ){
+	std::string chLabel = Form("bar%02d%s", iBar, label.c_str());
+	int ch = chID[chLabel]; 
+	
+	if ( !acceptEvent[entry][ch] ) continue;
+	
+	long long deltaT = (*time)[channelIdx[ch]] - tRef;
+	float energyRatio = (*energy)[channelIdx[ch]]/energyRef;
+	//float totRatio = (*tot)[channelIdx[ch]]/totRef;
+	float totRatio = ((*tot)[channelIdx[ch]]-offsetCh[std::make_pair(iBar , label.c_str())])/totRef ;
+	float energyRatioCorr = fitFun_energyRatioCorr[chLabel] -> Eval( energyRatio ) - fitFun_energyRatioCorr[chLabel] -> Eval( fitFun_energyRatio[chLabel]->GetParameter(1) ); 
+	int bin1 = p_deltaT_energyRatioCorr_totRatioCorr_vs_t1fine[chLabel]->FindBin( (*t1fine)[channelIdx[ch]]) ; 
+	int bin2 = p_deltaT_energyRatioCorr_totRatioCorr_vs_t1fine[chLabel]->FindBin( p_deltaT_energyRatioCorr_totRatioCorr_vs_t1fine[chLabel]->GetMean() );
+	float phaseCorr = p_deltaT_energyRatioCorr_totRatioCorr_vs_t1fine[chLabel] -> GetBinContent(bin1) -  p_deltaT_energyRatioCorr_totRatioCorr_vs_t1fine[chLabel] -> GetBinContent(bin2);
+
+	float energyRatioCorr_totRatioCorr = fitFun_energyRatioCorr_totRatioCorr[chLabel] -> Eval( totRatio ) - fitFun_energyRatioCorr_totRatioCorr[chLabel] -> Eval( fitFun_totRatio[chLabel]->GetParameter(1) ); 
+	
+      
+	if ( fabs(deltaT)>10000) continue;   
+	if ( fabs(deltaT-energyRatioCorr)>10000) continue;   
+	if ( fabs(deltaT-energyRatioCorr- energyRatioCorr_totRatioCorr)>10000) continue;   
+	
+	h_deltaT_energyRatioCorr_totRatioCorr_phaseCorr[chLabel] -> Fill( deltaT - energyRatioCorr - energyRatioCorr_totRatioCorr -  phaseCorr);
+
+	p_deltaT_energyRatioCorr_totRatioCorr_phaseCorr_vs_t1fineRef[chLabel]  -> Fill( (*t1fine)[channelIdx[chRef2]] , deltaT - energyRatioCorr - energyRatioCorr_totRatioCorr - phaseCorr);
+	h2_deltaT_energyRatioCorr_totRatioCorr_phaseCorr_vs_t1fineRef[chLabel] -> Fill( (*t1fine)[channelIdx[chRef2]] , deltaT - energyRatioCorr -  energyRatioCorr_totRatioCorr - phaseCorr);
+
+      } // end loop L,R
+
+      
+      // tDiff L-R
+      int chL = chID[Form("bar%02dL", iBar)];
+      int chR = chID[Form("bar%02dR", iBar)];
+
+      if ( acceptEvent[entry][chL]  && acceptEvent[entry][chR]  && acceptEvent_chRef[entry])    {      
+	float energyRatio = (*energy)[channelIdx[chL]]/(*energy)[channelIdx[chR]];
+	//float totRatio = (*tot)[channelIdx[chL]]/(*tot)[channelIdx[chR]];
+	float totRatio = ((*tot)[channelIdx[chL]]-offsetCh[std::make_pair(iBar , "L")])/((*tot)[channelIdx[chR]]-offsetCh[std::make_pair(iBar , "R")]);
+
+	float energyRatioCorr = fitFun_energyRatioCorr_LR[iBar] -> Eval( energyRatio ) - fitFun_energyRatioCorr_LR[iBar] -> Eval( fitFun_energyRatio_LR[iBar]->GetParameter(1) ); 
+	long long deltaT = (*time)[channelIdx[chL]] - (*time)[channelIdx[chR]];
+	int bin1 = p_deltaT_LR_energyRatioCorr_totRatioCorr_vs_t1fine[iBar]->FindBin( 0.5 * ( (*t1fine)[channelIdx[chL]]+(*t1fine)[channelIdx[chR]]) ); 
+	int bin2 = p_deltaT_LR_energyRatioCorr_totRatioCorr_vs_t1fine[iBar]->FindBin( p_deltaT_LR_energyRatioCorr_totRatioCorr_vs_t1fine[iBar]->GetMean() );
+	float phaseCorr = p_deltaT_LR_energyRatioCorr_totRatioCorr_vs_t1fine[iBar] -> GetBinContent(bin1) -  p_deltaT_LR_energyRatioCorr_totRatioCorr_vs_t1fine[iBar] -> GetBinContent(bin2);
+
+
+	float energyRatioCorr_totRatioCorr = fitFun_energyRatioCorr_totRatioCorr_LR[iBar] -> Eval(totRatio) - fitFun_energyRatioCorr_totRatioCorr_LR[iBar] -> Eval( fitFun_totRatio_LR[iBar]->GetParameter(1) ); 
+
+	if ( fabs(deltaT)<10000 && fabs(deltaT-energyRatioCorr)<10000 && fabs(deltaT-energyRatioCorr- energyRatioCorr_totRatioCorr)<10000){
+	  h_deltaT_LR_energyRatioCorr_totRatioCorr_phaseCorr[iBar] -> Fill( deltaT - energyRatioCorr - energyRatioCorr_totRatioCorr -  phaseCorr);
+
+	}
+      }
+      
+    }    // end loop over bars
+  }  
+ 
+
   // -- gaus fit deltaT for each channel
   map<std::string,TGraphErrors*> g_tRes;
   map<std::string,TGraphErrors*> g_tRes_energyRatioCorr;
   map<std::string,TGraphErrors*> g_tRes_energyRatioCorr_totRatioCorr;
   map<std::string,TGraphErrors*> g_tRes_energyRatioCorr_phaseCorr;
+  map<std::string,TGraphErrors*> g_tRes_energyRatioCorr_totRatioCorr_phaseCorr;
 
   map<std::string,TF1*> fitGaus;
   map<std::string,TF1*> fitGaus_energyRatioCorr;
   map<std::string,TF1*> fitGaus_energyRatioCorr_totRatioCorr;
   map<std::string,TF1*> fitGaus_energyRatioCorr_phaseCorr;
+  map<std::string,TF1*> fitGaus_energyRatioCorr_totRatioCorr_phaseCorr;
 
   TGraphErrors *g_tRes_LR = new TGraphErrors();
   TGraphErrors *g_tRes_energyRatioCorr_LR = new TGraphErrors();
   TGraphErrors *g_tRes_energyRatioCorr_phaseCorr_LR = new TGraphErrors();
   TGraphErrors *g_tRes_energyRatioCorr_totRatioCorr_LR = new TGraphErrors();
+  TGraphErrors *g_tRes_energyRatioCorr_totRatioCorr_phaseCorr_LR = new TGraphErrors();
 
   map<int,TF1*> fitGaus_LR;
   map<int,TF1*> fitGaus_energyRatioCorr_LR;
   map<int,TF1*> fitGaus_energyRatioCorr_phaseCorr_LR;
   map<int,TF1*> fitGaus_energyRatioCorr_totRatioCorr_LR;
+  map<int,TF1*> fitGaus_energyRatioCorr_totRatioCorr_phaseCorr_LR;
   
 
   // delta T L-R
@@ -787,12 +1035,19 @@ int main(int argc, char** argv){
     getTimeResolution(h_deltaT_LR_energyRatioCorr_phaseCorr[iBar], fitGaus_energyRatioCorr_phaseCorr_LR[iBar]); 
     g_tRes_energyRatioCorr_phaseCorr_LR-> SetPoint( g_tRes_energyRatioCorr_phaseCorr_LR->GetN(), iBar, fitGaus_energyRatioCorr_phaseCorr_LR[iBar]->GetParameter(2));
     g_tRes_energyRatioCorr_phaseCorr_LR-> SetPointError( g_tRes_energyRatioCorr_phaseCorr_LR->GetN()-1, 0, fitGaus_energyRatioCorr_phaseCorr_LR[iBar]->GetParError(2));
+    
 
     // -- energy + tot corr
     fitGaus_energyRatioCorr_totRatioCorr_LR[iBar] = new TF1(Form("fitGaus_energyRatioCorr_totRatioCorr_LR_bar%02d", iBar), "gaus",-10000,10000);
     getTimeResolution(h_deltaT_LR_energyRatioCorr_totRatioCorr[iBar], fitGaus_energyRatioCorr_totRatioCorr_LR[iBar]); 
     g_tRes_energyRatioCorr_totRatioCorr_LR-> SetPoint( g_tRes_energyRatioCorr_totRatioCorr_LR->GetN(), iBar, fitGaus_energyRatioCorr_totRatioCorr_LR[iBar]->GetParameter(2));
     g_tRes_energyRatioCorr_totRatioCorr_LR-> SetPointError( g_tRes_energyRatioCorr_totRatioCorr_LR->GetN()-1, 0, fitGaus_energyRatioCorr_totRatioCorr_LR[iBar]->GetParError(2));
+
+     // -- energy + tot + phase  corr
+    fitGaus_energyRatioCorr_totRatioCorr_phaseCorr_LR[iBar] = new TF1(Form("fitGaus_energyRatioCorr_totRatioCorr_phaseCorr_LR_bar%02d", iBar), "gaus",-10000,10000);
+    getTimeResolution(h_deltaT_LR_energyRatioCorr_totRatioCorr_phaseCorr[iBar], fitGaus_energyRatioCorr_totRatioCorr_phaseCorr_LR[iBar]); 
+    g_tRes_energyRatioCorr_totRatioCorr_phaseCorr_LR-> SetPoint( g_tRes_energyRatioCorr_totRatioCorr_phaseCorr_LR->GetN(), iBar, fitGaus_energyRatioCorr_totRatioCorr_phaseCorr_LR[iBar]->GetParameter(2));
+    g_tRes_energyRatioCorr_totRatioCorr_phaseCorr_LR-> SetPointError( g_tRes_energyRatioCorr_totRatioCorr_phaseCorr_LR->GetN()-1, 0, fitGaus_energyRatioCorr_totRatioCorr_phaseCorr_LR[iBar]->GetParError(2));
  
       
   }
@@ -806,6 +1061,7 @@ int main(int argc, char** argv){
     g_tRes_energyRatioCorr[label] = new TGraphErrors();
     g_tRes_energyRatioCorr_totRatioCorr[label] = new TGraphErrors();
     g_tRes_energyRatioCorr_phaseCorr[label] = new TGraphErrors();
+    g_tRes_energyRatioCorr_totRatioCorr_phaseCorr[label] = new TGraphErrors();
     
     for(int iBar = 0; iBar < 16; ++iBar){        
       bool barFound = std::find(barList.begin(), barList.end(), iBar) != barList.end() ;
@@ -840,173 +1096,107 @@ int main(int argc, char** argv){
       getTimeResolution(h_deltaT_energyRatioCorr_phaseCorr[chLabel], fitGaus_energyRatioCorr_phaseCorr[chLabel]);
       g_tRes_energyRatioCorr_phaseCorr[label]-> SetPoint( g_tRes_energyRatioCorr_phaseCorr[label]->GetN(), iBar, fitGaus_energyRatioCorr_phaseCorr[chLabel]->GetParameter(2));
       g_tRes_energyRatioCorr_phaseCorr[label]-> SetPointError( g_tRes_energyRatioCorr_phaseCorr[label]->GetN()-1, 0, fitGaus_energyRatioCorr_phaseCorr[chLabel]->GetParError(2));
+
+       // -- energy + tot + phase corr
+      fitGaus_energyRatioCorr_totRatioCorr_phaseCorr[chLabel] = new TF1(Form("fitGaus_energyRatioCorr_totRatioCorr_phaseCorr_%s",chLabel.c_str()), "gaus",-10000,10000);
+      getTimeResolution(h_deltaT_energyRatioCorr_totRatioCorr_phaseCorr[chLabel], fitGaus_energyRatioCorr_totRatioCorr_phaseCorr[chLabel]); 
+      g_tRes_energyRatioCorr_totRatioCorr_phaseCorr[label]-> SetPoint( g_tRes_energyRatioCorr_totRatioCorr_phaseCorr[label]->GetN(), iBar, fitGaus_energyRatioCorr_totRatioCorr_phaseCorr[chLabel]->GetParameter(2));
+      g_tRes_energyRatioCorr_totRatioCorr_phaseCorr[label]-> SetPointError( g_tRes_energyRatioCorr_totRatioCorr_phaseCorr[label]->GetN()-1, 0, fitGaus_energyRatioCorr_totRatioCorr_phaseCorr[chLabel]->GetParError(2));
+ 
   
     }
   }
+
+
   
-  
+  std::cout << "Triangulation ..." << std::endl;
+  std::cout << " >> Energy  ..." << std::endl;
+   // triangulation energy 
+  TGraphErrors *g_tRes_energyRatioCorr_L = new TGraphErrors();
+  TGraphErrors *g_tRes_energyRatioCorr_R = new TGraphErrors();
+  TGraphErrors *g_tRes_energyRatioCorr_chRef = new TGraphErrors();
+  triangulation(barList, 
+                h_deltaT_LR_energyRatioCorr, 
+                h_deltaT_energyRatioCorr, 
+                g_tRes_energyRatioCorr_LR ,
+                g_tRes_energyRatioCorr, 
+                g_tRes_energyRatioCorr_L,
+                g_tRes_energyRatioCorr_R, 
+                g_tRes_energyRatioCorr_chRef);
+
   
   // triangulation energy + phase
-  std::cout << "Triangulation ..." << std::endl;
-  TGraphErrors *g_tRes_L = new TGraphErrors();
-  TGraphErrors *g_tRes_R = new TGraphErrors();
-  TGraphErrors *g_tRes_chRef = new TGraphErrors();
+  std::cout << " >> Energy + phase ..." << std::endl;
+  TGraphErrors *g_tRes_energyRatioCorr_phaseCorr_L = new TGraphErrors();
+  TGraphErrors *g_tRes_energyRatioCorr_phaseCorr_R = new TGraphErrors();
+  TGraphErrors *g_tRes_energyRatioCorr_phaseCorr_chRef = new TGraphErrors();
+  triangulation(barList, 
+                h_deltaT_LR_energyRatioCorr_phaseCorr, 
+                h_deltaT_energyRatioCorr_phaseCorr,
+                g_tRes_energyRatioCorr_phaseCorr_LR ,
+                g_tRes_energyRatioCorr_phaseCorr, 
+                g_tRes_energyRatioCorr_phaseCorr_L, 
+                g_tRes_energyRatioCorr_phaseCorr_R, 
+                g_tRes_energyRatioCorr_phaseCorr_chRef);
+
  
-  for (int iBar = 0 ; iBar < 16; iBar++){
-    bool barFound = std::find(barList.begin(), barList.end(), iBar) != barList.end() ;
-    if (!barFound) continue;
- 
-    if (h_deltaT_LR_energyRatioCorr_phaseCorr[iBar] -> GetEntries() == 0) continue;
-    if (h_deltaT_energyRatioCorr_phaseCorr[ Form("bar%02dR", iBar)] -> GetEntries() == 0) continue;
-    if (h_deltaT_energyRatioCorr_phaseCorr[ Form("bar%02dL", iBar)] -> GetEntries() == 0) continue;
-
-    
-    float tRes_L_R = 0;
-    float tRes_L_chRef = 0;
-    float tRes_R_chRef = 0;
-
-    float err_tRes_L_R = 0;
-    float err_tRes_L_chRef = 0;
-    float err_tRes_R_chRef = 0;
-    
-    for ( int i = 0; i < g_tRes_energyRatioCorr_phaseCorr_LR-> GetN(); i++){
-      if (  int(g_tRes_energyRatioCorr_phaseCorr_LR-> GetPointX(i)) == iBar) {
-	tRes_L_R = g_tRes_energyRatioCorr_phaseCorr_LR-> GetPointY(i);
-	err_tRes_L_R = g_tRes_energyRatioCorr_phaseCorr_LR-> GetErrorY(i);
-	break;
-      }
-    }
-
-    for ( int i = 0; i < g_tRes_energyRatioCorr_phaseCorr["L"]-> GetN(); i++){
-      if (  g_tRes_energyRatioCorr_phaseCorr["L"]-> GetPointX(i) == iBar) {
-	tRes_L_chRef = g_tRes_energyRatioCorr_phaseCorr["L"]-> GetPointY(i);
-	err_tRes_L_chRef = g_tRes_energyRatioCorr_phaseCorr["L"]-> GetErrorY(i);
-	break;
-      }
-    }
-
-    for ( int i = 0; i < g_tRes_energyRatioCorr_phaseCorr["R"]-> GetN(); i++){
-      if (  g_tRes_energyRatioCorr_phaseCorr["R"]-> GetPointX(i) == iBar) {
-	tRes_R_chRef = g_tRes_energyRatioCorr_phaseCorr["R"]-> GetPointY(i);
-	err_tRes_R_chRef = g_tRes_energyRatioCorr_phaseCorr["R"]-> GetErrorY(i);
-	break;
-      }
-    }
-
-
-    cout <<  "  *** " << tRes_L_R << "   " << tRes_R_chRef  << "   " << tRes_L_chRef <<endl;
-    if ( tRes_L_R==0 || tRes_R_chRef==0 || tRes_L_chRef==0) continue;    
-
-    std::vector<float> tRes, err_tRes ;
-    tRes.clear();
-    err_tRes.clear();
-
-    ilTriangoloNo(tRes_L_R,tRes_R_chRef,tRes_L_chRef, err_tRes_L_R, err_tRes_R_chRef, err_tRes_L_chRef, tRes, err_tRes);
-
-    if ( !isnan(tRes[0]) ) g_tRes_L -> SetPoint( g_tRes_L->GetN(), iBar, tRes[0]);
-    if ( !isnan(tRes[1]) ) g_tRes_R -> SetPoint( g_tRes_R->GetN(), iBar, tRes[1]);
-    if ( !isnan(tRes[2]) ) g_tRes_chRef -> SetPoint( g_tRes_chRef->GetN(), iBar, tRes[2]);
-
-    if ( err_tRes[0]>=0 ) g_tRes_L -> SetPointError( g_tRes_L->GetN()-1, 0, err_tRes[0]);
-    if ( err_tRes[1]>=0 ) g_tRes_R -> SetPointError( g_tRes_R->GetN()-1, 0, err_tRes[1]);
-    if ( err_tRes[2]>=0 ) g_tRes_chRef -> SetPointError( g_tRes_chRef->GetN()-1, 0, err_tRes[2]);
-  }
-
-
 
   // energy + tot corr
-  TGraphErrors *g_tResTot_L = new TGraphErrors();
-  TGraphErrors *g_tResTot_R = new TGraphErrors();
-  TGraphErrors *g_tResTot_chRef = new TGraphErrors();
+  std::cout << " >> Energy + tot ..." << std::endl;
+  TGraphErrors *g_tRes_energyRatioCorr_totRatioCorr_L = new TGraphErrors();
+  TGraphErrors *g_tRes_energyRatioCorr_totRatioCorr_R = new TGraphErrors();
+  TGraphErrors *g_tRes_energyRatioCorr_totRatioCorr_chRef = new TGraphErrors();
+  triangulation(barList,
+                h_deltaT_LR_energyRatioCorr_totRatioCorr, 
+                h_deltaT_energyRatioCorr_totRatioCorr, 
+                g_tRes_energyRatioCorr_totRatioCorr_LR , 
+                g_tRes_energyRatioCorr_totRatioCorr, 
+                g_tRes_energyRatioCorr_totRatioCorr_L, 
+                g_tRes_energyRatioCorr_totRatioCorr_R, 
+                g_tRes_energyRatioCorr_totRatioCorr_chRef);
+
+ // triangulation energy + tot + phase
+  std::cout << " >> Energy + tot + phase ..." << std::endl;
+  TGraphErrors *g_tRes_energyRatioCorr_totRatioCorr_phaseCorr_L = new TGraphErrors();
+  TGraphErrors *g_tRes_energyRatioCorr_totRatioCorr_phaseCorr_R = new TGraphErrors();
+  TGraphErrors *g_tRes_energyRatioCorr_totRatioCorr_phaseCorr_chRef = new TGraphErrors();
+  triangulation(barList, 
+                h_deltaT_LR_energyRatioCorr_totRatioCorr_phaseCorr, 
+                h_deltaT_energyRatioCorr_totRatioCorr_phaseCorr, 
+                g_tRes_energyRatioCorr_totRatioCorr_phaseCorr_LR,
+                g_tRes_energyRatioCorr_totRatioCorr_phaseCorr, 
+                g_tRes_energyRatioCorr_totRatioCorr_phaseCorr_L, 
+                g_tRes_energyRatioCorr_totRatioCorr_phaseCorr_R,
+                g_tRes_energyRatioCorr_totRatioCorr_phaseCorr_chRef);
+
  
-  for (int iBar = 0 ; iBar < 16; iBar++){
-    bool barFound = std::find(barList.begin(), barList.end(), iBar) != barList.end() ;
-    if (!barFound) continue;
-    if (h_deltaT_LR_energyRatioCorr_totRatioCorr[iBar] -> GetEntries() == 0) continue;
-    if (h_deltaT_energyRatioCorr_totRatioCorr[ Form("bar%02dR", iBar)] -> GetEntries() == 0) continue;
-    if (h_deltaT_energyRatioCorr_totRatioCorr[ Form("bar%02dL", iBar)] -> GetEntries() == 0) continue;
-
-    
-    float tRes_L_R = 0;
-    float tRes_L_chRef = 0;
-    float tRes_R_chRef = 0;
-
-    float err_tRes_L_R = 0;
-    float err_tRes_L_chRef = 0;
-    float err_tRes_R_chRef = 0;
-    
-    for ( int i = 0; i < g_tRes_energyRatioCorr_totRatioCorr_LR-> GetN(); i++){
-      if (  int(g_tRes_energyRatioCorr_totRatioCorr_LR-> GetPointX(i)) == iBar) {
-	tRes_L_R = g_tRes_energyRatioCorr_totRatioCorr_LR-> GetPointY(i);
-	err_tRes_L_R = g_tRes_energyRatioCorr_totRatioCorr_LR-> GetErrorY(i);
-	break;
-      }
-    }
-
-    for ( int i = 0; i < g_tRes_energyRatioCorr_totRatioCorr["L"]-> GetN(); i++){
-      if (  g_tRes_energyRatioCorr_totRatioCorr["L"]-> GetPointX(i) == iBar) {
-	tRes_L_chRef = g_tRes_energyRatioCorr_totRatioCorr["L"]-> GetPointY(i);
-	err_tRes_L_chRef = g_tRes_energyRatioCorr_totRatioCorr["L"]-> GetErrorY(i);
-	break;
-      }
-    }
-
-    for ( int i = 0; i < g_tRes_energyRatioCorr_totRatioCorr["R"]-> GetN(); i++){
-      if (  g_tRes_energyRatioCorr_totRatioCorr["R"]-> GetPointX(i) == iBar) {
-	tRes_R_chRef = g_tRes_energyRatioCorr_totRatioCorr["R"]-> GetPointY(i);
-	err_tRes_R_chRef = g_tRes_energyRatioCorr_totRatioCorr["R"]-> GetErrorY(i);
-	break;
-      }
-    }
-
-
-    cout <<  "  *** " << tRes_L_R << "   " << tRes_R_chRef  << "   " << tRes_L_chRef <<endl;
-    if ( tRes_L_R==0 || tRes_R_chRef==0 || tRes_L_chRef==0) continue;    
-
-    std::vector<float> tRes, err_tRes ;
-    tRes.clear();
-    err_tRes.clear();
-
-    ilTriangoloNo(tRes_L_R,tRes_R_chRef,tRes_L_chRef, err_tRes_L_R, err_tRes_R_chRef, err_tRes_L_chRef, tRes, err_tRes);
-
-    if ( !isnan(tRes[0]) ) g_tResTot_L -> SetPoint( g_tResTot_L->GetN(), iBar, tRes[0]);
-    if ( !isnan(tRes[1]) ) g_tResTot_R -> SetPoint( g_tResTot_R->GetN(), iBar, tRes[1]);
-    if ( !isnan(tRes[2]) ) g_tResTot_chRef -> SetPoint( g_tResTot_chRef->GetN(), iBar, tRes[2]);
-
-    if ( err_tRes[0]>=0 ) g_tResTot_L -> SetPointError( g_tResTot_L->GetN()-1, 0, err_tRes[0]);
-    if ( err_tRes[1]>=0 ) g_tResTot_R -> SetPointError( g_tResTot_R->GetN()-1, 0, err_tRes[1]);
-    if ( err_tRes[2]>=0 ) g_tResTot_chRef -> SetPointError( g_tResTot_chRef->GetN()-1, 0, err_tRes[2]);
-  }
-
-
-
 
 
   // ======  save histograms in a file
-  string foutN = Form("%s/analysisSingleChannel_runs%s",outDir.c_str(),runs.c_str());
-  if (useTimeAverage) foutN = Form("%s/analysisSingleChannel_runs%s_timeAverage",outDir.c_str(),runs.c_str());
-  if (offsetFileName != "NOOFFSET") foutN = Form("%s_offset",foutN.c_str());
-  string foutName = Form ("%s.root", foutN.c_str());
-  TFile *fout = new TFile(foutName.c_str(),"recreate");
-
-  for (auto label : labelLR ){
-    for(int iBar = 0; iBar < 16; ++iBar){        
-      std::string chLabel = Form("bar%02d%s", iBar, label.c_str());
-      h_energyRatio[chLabel]->Write();
-      h2_energyRatio_vs_totRatio[chLabel]->Write();
-      h_energy[chLabel]->Write();
-      h_deltaT[chLabel]->Write();
-      h_deltaT_energyRatioCorr[chLabel]->Write();
-      p_deltaT_vs_energyRatio[chLabel]->Write();
-    }
-    
-    g_tRes[label]->Write(Form("g_tRes_%s",label.c_str()));
-    g_tRes_energyRatioCorr[label]->Write(Form("g_tRes_energyRatioCorr_%s",label.c_str()));
-    g_tRes_energyRatioCorr_phaseCorr[label]->Write( Form("g_tRes_energyRatioCorr_phaseCorr_%s",label.c_str()));
-    g_tRes_energyRatioCorr_totRatioCorr[label]->Write( Form("g_tRes_energyRatioCorr_totRatioCorr_%s",label.c_str()));
-  }
-  
-  fout->Close();
+//  string foutN = Form("%s/analysisSingleChannel_runs%s",outDir.c_str(),runs.c_str());
+//  if (useTimeAverage) foutN = Form("%s/analysisSingleChannel_runs%s_timeAverage",outDir.c_str(),runs.c_str());
+//  if (offsetFileName != "NOOFFSET") foutN = Form("%s_offset",foutN.c_str());
+//  string foutName = Form ("%s.root", foutN.c_str());
+//  TFile *fout = new TFile(foutName.c_str(),"recreate");
+//
+//  for (auto label : labelLR ){
+//    for(int iBar = 0; iBar < 16; ++iBar){        
+//      std::string chLabel = Form("bar%02d%s", iBar, label.c_str());
+//      h_energyRatio[chLabel]->Write();
+//      h2_energyRatio_vs_totRatio[chLabel]->Write();
+//      h_energy[chLabel]->Write();
+//      h_deltaT[chLabel]->Write();
+//      h_deltaT_energyRatioCorr[chLabel]->Write();
+//      p_deltaT_vs_energyRatio[chLabel]->Write();
+//    }
+//    
+//    g_tRes[label]->Write(Form("g_tRes_%s",label.c_str()));
+//    g_tRes_energyRatioCorr[label]->Write(Form("g_tRes_energyRatioCorr_%s",label.c_str()));
+//    g_tRes_energyRatioCorr_phaseCorr[label]->Write( Form("g_tRes_energyRatioCorr_phaseCorr_%s",label.c_str()));
+//    g_tRes_energyRatioCorr_totRatioCorr[label]->Write( Form("g_tRes_energyRatioCorr_totRatioCorr_%s",label.c_str()));
+//  }
+//  
+//  fout->Close();
 
 
   gStyle->SetOptFit(1111);
@@ -1074,7 +1264,17 @@ int main(int argc, char** argv){
   c->Print(Form("%s/c_deltaT_LR_chRef.pdf",plotDir.c_str()));
   delete c;
 
+
+  // Delta T Corr Histos for tDiff L-R
   for(int iBar = 0; iBar < 16; ++iBar){
+    c = new TCanvas("c","c", 800, 600);
+    h_deltaT_LR_energyRatioCorr[iBar]-> GetXaxis()-> SetTitle("#Deltat [ps] ");
+    h_deltaT_LR_energyRatioCorr[iBar]-> SetMarkerStyle(20);
+    h_deltaT_LR_energyRatioCorr[iBar]-> Draw("e");
+    c->Print(Form("%s/c_deltaT_LR_energyRatioCorr_bar%02d.png",plotDir.c_str(), iBar) );
+    c->Print(Form("%s/c_deltaT_LR_energyRatioCorr_bar%02d.pdf",plotDir.c_str(), iBar) );
+    delete c;
+
     c = new TCanvas("c","c", 800, 600);
     h_deltaT_LR_energyRatioCorr_phaseCorr[iBar]-> GetXaxis()-> SetTitle("#Deltat [ps] ");
     h_deltaT_LR_energyRatioCorr_phaseCorr[iBar]-> SetMarkerStyle(20);
@@ -1090,6 +1290,16 @@ int main(int argc, char** argv){
     c->Print(Form("%s/c_deltaT_LR_energyRatioCorr_totRatioCorr_bar%02d.png",plotDir.c_str(), iBar) );
     c->Print(Form("%s/c_deltaT_LR_energyRatioCorr_totRatioCorr_bar%02d.pdf",plotDir.c_str(), iBar) );
     delete c;
+
+    c = new TCanvas("c","c", 800, 600);
+    h_deltaT_LR_energyRatioCorr_totRatioCorr_phaseCorr[iBar]-> GetXaxis()-> SetTitle("#Deltat [ps] ");
+    h_deltaT_LR_energyRatioCorr_totRatioCorr_phaseCorr[iBar]-> SetMarkerStyle(20);
+    h_deltaT_LR_energyRatioCorr_totRatioCorr_phaseCorr[iBar]-> Draw("e");
+    c->Print(Form("%s/c_deltaT_LR_energyRatioCorr_totRatioCorr_phaseCorr_bar%02d.png",plotDir.c_str(), iBar) );
+    c->Print(Form("%s/c_deltaT_LR_energyRatioCorr_totRatioCorr_phaseCorr_bar%02d.pdf",plotDir.c_str(), iBar) );
+    delete c;
+
+
 
 
   }
@@ -1189,7 +1399,7 @@ int main(int argc, char** argv){
       c->Print(Form("%s/c_deltaT_energyRatioCorr_%s.pdf",plotDir.c_str(),chLabel.c_str()));
       delete c;
 
-      // -- deltaT corr
+      // -- deltaT energy + tot corr
       c = new TCanvas("c","c", 800, 600);
       h_deltaT_energyRatioCorr_totRatioCorr[chLabel]-> GetXaxis()->SetTitle("#Deltat [ps]");
       h_deltaT_energyRatioCorr_totRatioCorr[chLabel]-> SetMarkerStyle(20);
@@ -1222,6 +1432,20 @@ int main(int argc, char** argv){
       c->Print(Form("%s/c_deltaT_energyRatioCorr_vs_t1fine_%s.pdf",plotDir.c_str(),chLabel.c_str()));
       delete c;
       
+      // -- deltaT corr vs t1fine
+      c = new TCanvas("c","c", 800, 600);
+      p_deltaT_energyRatioCorr_totRatioCorr_vs_t1fine[chLabel]->SetMarkerStyle(20);
+      p_deltaT_energyRatioCorr_totRatioCorr_vs_t1fine[chLabel]->SetMarkerSize(1);
+      p_deltaT_energyRatioCorr_totRatioCorr_vs_t1fine[chLabel]-> GetXaxis()->SetTitle("t1fine");
+      p_deltaT_energyRatioCorr_totRatioCorr_vs_t1fine[chLabel]-> GetYaxis()->SetRangeUser( h2_deltaT_energyRatioCorr_totRatioCorr_vs_t1fine[chLabel]->GetMean(2) - 300, h2_deltaT_energyRatioCorr_totRatioCorr_vs_t1fine[chLabel]->GetMean(2) + 300);
+      p_deltaT_energyRatioCorr_totRatioCorr_vs_t1fine[chLabel]->Draw();
+      h2_deltaT_energyRatioCorr_totRatioCorr_vs_t1fine[chLabel]->Draw("colz same");
+      p_deltaT_energyRatioCorr_totRatioCorr_vs_t1fine[chLabel]->Draw("same");
+      
+      c->Print(Form("%s/c_deltaT_energyRatioCorr_totRatioCorr_vs_t1fine_%s.png",plotDir.c_str(),chLabel.c_str()));
+      c->Print(Form("%s/c_deltaT_energyRatioCorr_totRatioCorr_vs_t1fine_%s.pdf",plotDir.c_str(),chLabel.c_str()));
+      delete c;
+ 
       
       // -- deltaT corr vs t1fine ref channel
       c = new TCanvas("c","c", 800, 600);
@@ -1236,7 +1460,22 @@ int main(int argc, char** argv){
       c->Print(Form("%s/c_deltaT_energyRatioCorr_phaseCorr_vs_t1fineRef_%s.png",plotDir.c_str(),chLabel.c_str()));
       c->Print(Form("%s/c_deltaT_energyRatioCorr_phaseCorr_vs_t1fineRef_%s.pdf",plotDir.c_str(),chLabel.c_str()));
       delete c;
+
+       // -- deltaT corr vs t1fine ref channel
+      c = new TCanvas("c","c", 800, 600);
+      p_deltaT_energyRatioCorr_totRatioCorr_phaseCorr_vs_t1fineRef[chLabel]->SetMarkerStyle(20);
+      p_deltaT_energyRatioCorr_totRatioCorr_phaseCorr_vs_t1fineRef[chLabel]->SetMarkerSize(1);
+      p_deltaT_energyRatioCorr_totRatioCorr_phaseCorr_vs_t1fineRef[chLabel]-> GetXaxis()->SetTitle("t1fine_{chRef}");
+      p_deltaT_energyRatioCorr_totRatioCorr_phaseCorr_vs_t1fineRef[chLabel]-> GetYaxis()->SetRangeUser( h2_deltaT_energyRatioCorr_totRatioCorr_phaseCorr_vs_t1fineRef[chLabel]->GetMean(2) - 300, h2_deltaT_energyRatioCorr_totRatioCorr_phaseCorr_vs_t1fineRef[chLabel]->GetMean(2) + 300);
+      p_deltaT_energyRatioCorr_totRatioCorr_phaseCorr_vs_t1fineRef[chLabel]->Draw();
+      h2_deltaT_energyRatioCorr_totRatioCorr_phaseCorr_vs_t1fineRef[chLabel]->Draw("colz same");
+      p_deltaT_energyRatioCorr_totRatioCorr_phaseCorr_vs_t1fineRef[chLabel]->Draw("same");
       
+      c->Print(Form("%s/c_deltaT_energyRatioCorr_totRatioCorr_phaseCorr_vs_t1fineRef_%s.png",plotDir.c_str(),chLabel.c_str()));
+      c->Print(Form("%s/c_deltaT_energyRatioCorr_totRatioCorr_phaseCorr_vs_t1fineRef_%s.pdf",plotDir.c_str(),chLabel.c_str()));
+      delete c;
+     
+
     }
   }
   
@@ -1257,6 +1496,7 @@ int main(int argc, char** argv){
   hdummy1->Draw();
   for (auto label : labelLR ){   
     g_tRes[label]->SetMarkerStyle(20);
+    g_tRes[label]->SetName(Form("g_tRes_%s", label.c_str()));
     if (label == "R") g_tRes[label]->SetMarkerStyle(24);
     g_tRes[label]->SetMarkerSize(1);
     g_tRes[label]->Draw("psame") ;
@@ -1275,8 +1515,9 @@ int main(int argc, char** argv){
   hdummy2->GetYaxis()->SetTitle("#sigma(t_{ch} - t_{ref}) [ps]");
   hdummy2->Draw();
   for (auto label : labelLR ){   
-    g_tRes_energyRatioCorr[label]->SetMarkerColor(2);
-    g_tRes_energyRatioCorr[label]->SetLineColor(2);
+    g_tRes_energyRatioCorr[label]->SetName(Form("g_tRes_energyRatioCorr_%s", label.c_str()));
+    g_tRes_energyRatioCorr[label]->SetMarkerColor(613); // kMagenta - 3
+    g_tRes_energyRatioCorr[label]->SetLineColor(613);
     g_tRes_energyRatioCorr[label]->SetMarkerStyle(20);
     if (label == "R") g_tRes_energyRatioCorr[label]->SetMarkerStyle(24);
     g_tRes_energyRatioCorr[label]->SetMarkerSize(1);
@@ -1284,62 +1525,19 @@ int main(int argc, char** argv){
   }
   c->Print(Form("%s/c_tRes_energyRatioCorr_vs_bar.png",plotDir.c_str()));
   c->Print(Form("%s/c_tRes_energyRatioCorr_vs_bar.pdf",plotDir.c_str()));
+  c->SaveAs(Form("%s/c_tRes_energyRatioCorr_vs_bar.root",plotDir.c_str()));
   delete c;
 
-   // --tot corr +  energy corr
+
+  // -- energy + phase corr
   c = new TCanvas("c","c", 800, 600);
   c->SetGridx();
   c->SetGridy();
   hdummy2->Draw();
   for (auto label : labelLR ){   
-    g_tRes_energyRatioCorr_totRatioCorr[label]->SetMarkerColor(3);
-    g_tRes_energyRatioCorr_totRatioCorr[label]->SetLineColor(3);
-    g_tRes_energyRatioCorr_totRatioCorr[label]->SetMarkerStyle(20);
-    if (label == "R") g_tRes_energyRatioCorr_totRatioCorr[label]->SetMarkerStyle(24);
-    g_tRes_energyRatioCorr_totRatioCorr[label]->SetMarkerSize(1);
-    g_tRes_energyRatioCorr_totRatioCorr[label]->Draw("psame") ;
-  }
-  c->Print(Form("%s/c_tRes_energyRatioCorr_totRatioCorr_vs_bar.png",plotDir.c_str()));
-  c->Print(Form("%s/c_tRes_energyRatioCorr_totRatioCorr_vs_bar.pdf",plotDir.c_str()));
-  delete c;
-
-
-   // --tot corr +  energy corr
-  c = new TCanvas("c","c", 800, 600);
-  c->SetGridx();
-  c->SetGridy();
-  hdummy2->Draw();
-  for (auto label : labelLR ){   
-    g_tRes_energyRatioCorr[label]->Draw("psame") ;
-    g_tRes_energyRatioCorr_totRatioCorr[label]->Draw("psame") ;
-  }
-
-  TLegend *lege = new TLegend(0.20, 0.78, 0.65, 0.88);
-  lege->SetBorderSize(0);
-  lege->SetFillStyle(0);
-  lege->AddEntry(g_tRes_energyRatioCorr["L"], "energy ratio corr", "P");
-  lege->AddEntry(g_tRes_energyRatioCorr_totRatioCorr["L"], "energy & tot ratio corr", "P");
-  lege->Draw("same");
-
-
-
-  c->Print(Form("%s/c_tRes_CFR_energyRatioCorr_totRatioCorr_vs_bar.png",plotDir.c_str()));
-  c->Print(Form("%s/c_tRes_CFR_energyRatioCorr_totRatioCorr_vs_bar.pdf",plotDir.c_str()));
-  delete c;
- 
-  
-    
-  // -- energy+phase corr
-  c = new TCanvas("c","c", 800, 600);
-  c->SetGridx();
-  c->SetGridy();
-  TH2F* hdummy3 = new TH2F("hdummy3","",16,-0.5,15.5,100,ymin,ymax);
-  hdummy3->GetXaxis()->SetTitle("bar");
-  hdummy3->GetYaxis()->SetTitle("#sigma(t_{ch} - t_{ref}) [ps]");
-  hdummy3->Draw();
-  for (auto label : labelLR ){   
-    g_tRes_energyRatioCorr_phaseCorr[label]->SetMarkerColor(4);
-    g_tRes_energyRatioCorr_phaseCorr[label]->SetLineColor(4);
+    g_tRes_energyRatioCorr_phaseCorr[label]->SetName(Form("g_tRes_energyRatioCorr_phaseCorr_%s", label.c_str()));
+    g_tRes_energyRatioCorr_phaseCorr[label]->SetMarkerColor(867); // kAzure + 7
+    g_tRes_energyRatioCorr_phaseCorr[label]->SetLineColor(867);
     g_tRes_energyRatioCorr_phaseCorr[label]->SetMarkerStyle(20);
     if (label == "R") g_tRes_energyRatioCorr_phaseCorr[label]->SetMarkerStyle(24);
     g_tRes_energyRatioCorr_phaseCorr[label]->SetMarkerSize(1);
@@ -1347,157 +1545,180 @@ int main(int argc, char** argv){
   }
   c->Print(Form("%s/c_tRes_energyRatioCorr_phaseCorr_vs_bar.png",plotDir.c_str()));
   c->Print(Form("%s/c_tRes_energyRatioCorr_phaseCorr_vs_bar.pdf",plotDir.c_str()));
+  c->SaveAs(Form("%s/c_tRes_energyRatioCorr_phaseCorr_vs_bar.root",plotDir.c_str()));
   delete c;
 
 
 
-  // -- tRes of L, R, chRef after triangulation
+
+
+   // --tot corr +  energy corr
   c = new TCanvas("c","c", 800, 600);
   c->SetGridx();
   c->SetGridy();
-  //ymin = 20;
-  //ymax = 110;
-  if ( step1 == 1.50){
-    ymax = 160;
+  hdummy2->Draw();
+  for (auto label : labelLR ){   
+    g_tRes_energyRatioCorr_totRatioCorr[label]->SetName(Form("g_tRes_energyRatioCorr_totRatioCorr_%s", label.c_str()));
+    g_tRes_energyRatioCorr_totRatioCorr[label]->SetMarkerColor(887); // kViolet + 7
+    g_tRes_energyRatioCorr_totRatioCorr[label]->SetLineColor(887);
+    g_tRes_energyRatioCorr_totRatioCorr[label]->SetMarkerStyle(20);
+    if (label == "R") g_tRes_energyRatioCorr_totRatioCorr[label]->SetMarkerStyle(24);
+    g_tRes_energyRatioCorr_totRatioCorr[label]->SetMarkerSize(1);
+    g_tRes_energyRatioCorr_totRatioCorr[label]->Draw("psame") ;
   }
-  TH2F* hdummy4 = new TH2F("hdummy4","",16,-0.5,15.5,100,ymin,ymax);
-  hdummy4->GetXaxis()->SetTitle("bar");
-  hdummy4->GetYaxis()->SetTitle("#sigma_{t} [ps]");
-  hdummy4->Draw();
-  g_tRes_L ->SetMarkerStyle(20);
-  g_tRes_L -> SetLineColor(51);
-  g_tRes_L -> SetMarkerColor(51);
-  g_tRes_R -> SetMarkerStyle(24);
-  g_tRes_R -> SetLineColor(51);
-  g_tRes_R -> SetMarkerColor(51);
-  g_tRes_chRef ->SetMarkerStyle(21);
-  g_tRes_chRef ->SetMarkerColor(12);
-  g_tRes_chRef ->SetLineColor(12);
-  g_tRes_L->Draw("psame") ;
-  g_tRes_R->Draw("psame") ;
-  g_tRes_chRef->Draw("psame") ;
-
-  TLegend *leg = new TLegend(0.20, 0.78, 0.35, 0.88);
-  leg->SetBorderSize(0);
-  leg->SetFillStyle(0);
-  leg->AddEntry(g_tRes_L, "L", "P");
-  leg->AddEntry(g_tRes_R, "R", "P");
-  if (useTimeAverage) leg->AddEntry(g_tRes_chRef, "Ref (average)", "P");
-  else leg->AddEntry(g_tRes_chRef, "Ref (single)", "P");
-  leg->Draw("same");
-
-  TF1 *myfitL = new TF1("myfitL","pol0", 0, 100);
-  myfitL -> SetLineColor(51);
-  myfitL -> SetParameter(0, g_tRes_L -> GetMean(2));
-  g_tRes_L ->Fit("myfitL");
-  TLatex *latexL = new TLatex(0.50,0.88,Form("<#sigma_{t}> = %.1f #pm %.1f ps", myfitL->GetParameter(0), myfitL->GetParError(0)));
-  latexL -> SetNDC();
-  latexL -> SetTextFont(42);
-  latexL -> SetTextSize(0.04);
-  latexL->Draw("same");
-  TF1 *myfitR = new TF1("myfitR","pol0", 0, 100);
-  myfitR -> SetLineColor(51);
-  myfitR -> SetLineStyle(2);
-  myfitR -> SetParameter(0, g_tRes_R -> GetMean(2));
-  g_tRes_R ->Fit("myfitR");
-  TLatex *latexR = new TLatex(0.50,0.83,Form("<#sigma_{t}> = %.1f #pm %.1f ps", myfitR->GetParameter(0), myfitR->GetParError(0)));
-  latexR -> SetNDC();
-  latexR -> SetTextFont(42);
-  latexR -> SetTextSize(0.04);
-  latexR->Draw("same");
-  TF1 *myfitChRef = new TF1("myfitChRef","pol0", 0, 100);
-  myfitChRef -> SetLineColor(12);
-  myfitChRef -> SetParameter(0,g_tRes_chRef -> GetMean(2));
-  g_tRes_chRef ->Fit("myfitChRef");
-  TLatex *latexRef = new TLatex(0.50,0.78,Form("<#sigma_{t}> = %.1f #pm %.1f ps", myfitChRef->GetParameter(0), myfitChRef->GetParError(0)));
-  latexRef -> SetNDC();
-  latexRef -> SetTextFont(42);
-  latexRef -> SetTextSize(0.04);
-  latexRef->Draw("same");
-  
-  std::cout << "L    : " <<  "   <sigma_t> = " << myfitL->GetParameter(0) << "+/-" << myfitL->GetParError(0) <<std::endl;
-  std::cout << "R    : " <<  "   <sigma_t> = " << myfitR->GetParameter(0) << "+/-" << myfitR->GetParError(0) <<std::endl;
-  std::cout << "ChRef: " <<  "   <sigma_t> = " << myfitChRef->GetParameter(0) << "+/-" << myfitChRef->GetParError(0) <<std::endl;
-
-  c->Print(Form("%s/c_tRes.png",plotDir.c_str()));
-  c->Print(Form("%s/c_tRes.pdf",plotDir.c_str()));
+  c->Print(Form("%s/c_tRes_energyRatioCorr_totRatioCorr_vs_bar.png",plotDir.c_str()));
+  c->Print(Form("%s/c_tRes_energyRatioCorr_totRatioCorr_vs_bar.pdf",plotDir.c_str()));
+  c->SaveAs(Form("%s/c_tRes_energyRatioCorr_totRatioCorr_vs_bar.root",plotDir.c_str()));
   delete c;
-  delete myfitL;
-  delete myfitR;
-  delete myfitChRef;
-  delete latexL;
-  delete latexR;
-  delete latexRef;
 
-  // after tot corr
+  // -- energy + tot + phase corr
   c = new TCanvas("c","c", 800, 600);
   c->SetGridx();
   c->SetGridy();
-  //ymin = 20;
-  //ymax = 110;
-  if ( step1 == 1.50){
-    ymax = 160;
+  hdummy2->Draw();
+  for (auto label : labelLR ){   
+    g_tRes_energyRatioCorr_totRatioCorr_phaseCorr[label]->SetName(Form("g_tRes_energyRatioCorr_totRatioCorr_phaseCorr_%s", label.c_str()));
+    g_tRes_energyRatioCorr_totRatioCorr_phaseCorr[label]->SetMarkerColor(418); // kGreen + 2
+    g_tRes_energyRatioCorr_totRatioCorr_phaseCorr[label]->SetLineColor(418);
+    g_tRes_energyRatioCorr_totRatioCorr_phaseCorr[label]->SetMarkerStyle(20);
+    if (label == "R") g_tRes_energyRatioCorr_totRatioCorr_phaseCorr[label]->SetMarkerStyle(24);
+    g_tRes_energyRatioCorr_totRatioCorr_phaseCorr[label]->SetMarkerSize(1);
+    g_tRes_energyRatioCorr_totRatioCorr_phaseCorr[label]->Draw("psame") ;
   }
-  hdummy4->Draw();
-  g_tResTot_L ->SetMarkerStyle(20);
-  g_tResTot_L -> SetLineColor(51);
-  g_tResTot_L -> SetMarkerColor(51);
-  g_tResTot_R -> SetMarkerStyle(24);
-  g_tResTot_R -> SetLineColor(51);
-  g_tResTot_R -> SetMarkerColor(51);
-  g_tResTot_chRef ->SetMarkerStyle(21);
-  g_tResTot_chRef ->SetMarkerColor(12);
-  g_tResTot_chRef ->SetLineColor(12);
-  g_tResTot_L->Draw("psame") ;
-  g_tResTot_R->Draw("psame") ;
-  g_tResTot_chRef->Draw("psame") ;
-
-  TLegend *leg1 = new TLegend(0.20, 0.78, 0.35, 0.88);
-  leg1->SetBorderSize(0);
-  leg1->SetFillStyle(0);
-  leg1->AddEntry(g_tResTot_L, "L", "P");
-  leg1->AddEntry(g_tResTot_R, "R", "P");
-  if (useTimeAverage) leg1->AddEntry(g_tResTot_chRef, "Ref (average)", "P");
-  else leg1->AddEntry(g_tResTot_chRef, "Ref (single)", "P");
-  leg1->Draw("same");
-
-  myfitL = new TF1("myfitL","pol0", 0, 100);
-  myfitL -> SetLineColor(51);
-  myfitL -> SetParameter(0, g_tResTot_L -> GetMean(2));
-  g_tResTot_L ->Fit("myfitL");
-  latexL = new TLatex(0.50,0.88,Form("<#sigma_{t}> = %.1f #pm %.1f ps", myfitL->GetParameter(0), myfitL->GetParError(0)));
-  latexL -> SetNDC();
-  latexL -> SetTextFont(42);
-  latexL -> SetTextSize(0.04);
-  latexL->Draw("same");
-  myfitR = new TF1("myfitR","pol0", 0, 100);
-  myfitR -> SetLineColor(51);
-  myfitR -> SetLineStyle(2);
-  myfitR -> SetParameter(0, g_tResTot_R -> GetMean(2));
-  g_tResTot_R ->Fit("myfitR");
-  latexR = new TLatex(0.50,0.83,Form("<#sigma_{t}> = %.1f #pm %.1f ps", myfitR->GetParameter(0), myfitR->GetParError(0)));
-  latexR -> SetNDC();
-  latexR -> SetTextFont(42);
-  latexR -> SetTextSize(0.04);
-  latexR->Draw("same");
-  myfitChRef = new TF1("myfitChRef","pol0", 0, 100);
-  myfitChRef -> SetLineColor(12);
-  myfitChRef -> SetParameter(0,g_tResTot_chRef -> GetMean(2));
-  g_tResTot_chRef ->Fit("myfitChRef");
-  latexRef = new TLatex(0.50,0.78,Form("<#sigma_{t}> = %.1f #pm %.1f ps", myfitChRef->GetParameter(0), myfitChRef->GetParError(0)));
-  latexRef -> SetNDC();
-  latexRef -> SetTextFont(42);
-  latexRef -> SetTextSize(0.04);
-  latexRef->Draw("same");
-  
-  std::cout << "L    : " <<  "   <sigma_t> = " << myfitL->GetParameter(0) << "+/-" << myfitL->GetParError(0) <<std::endl;
-  std::cout << "R    : " <<  "   <sigma_t> = " << myfitR->GetParameter(0) << "+/-" << myfitR->GetParError(0) <<std::endl;
-  std::cout << "ChRef: " <<  "   <sigma_t> = " << myfitChRef->GetParameter(0) << "+/-" << myfitChRef->GetParError(0) <<std::endl;
-
-  c->Print(Form("%s/c_tResTot.png",plotDir.c_str()));
-  c->Print(Form("%s/c_tResTot.pdf",plotDir.c_str()));
+  c->Print(Form("%s/c_tRes_energyRatioCorr_totRatioCorr_phaseCorr_vs_bar.png",plotDir.c_str()));
+  c->Print(Form("%s/c_tRes_energyRatioCorr_totRatioCorr_phaseCorr_vs_bar.pdf",plotDir.c_str()));
+  c->SaveAs(Form("%s/c_tRes_energyRatioCorr_totRatioCorr_phaseCorr_vs_bar.root",plotDir.c_str()));
   delete c;
+
+
+//   // --tot corr +  energy corr
+//  c = new TCanvas("c","c", 800, 600);
+//  c->SetGridx();
+//  c->SetGridy();
+//  hdummy2->Draw();
+//  for (auto label : labelLR ){   
+//    g_tRes_energyRatioCorr[label]->Draw("psame") ;
+//    g_tRes_energyRatioCorr_totRatioCorr[label]->Draw("psame") ;
+//  }
+//
+//  TLegend *lege = new TLegend(0.20, 0.78, 0.65, 0.88);
+//  lege->SetBorderSize(0);
+//  lege->SetFillStyle(0);
+//  lege->AddEntry(g_tRes_energyRatioCorr["L"], "energy ratio corr", "P");
+//  lege->AddEntry(g_tRes_energyRatioCorr_totRatioCorr["L"], "energy & tot ratio corr", "P");
+//  lege->Draw("same");
+//
+//
+//
+//  c->Print(Form("%s/c_tRes_CFR_energyRatioCorr_totRatioCorr_vs_bar.png",plotDir.c_str()));
+//  c->Print(Form("%s/c_tRes_CFR_energyRatioCorr_totRatioCorr_vs_bar.pdf",plotDir.c_str()));
+//  delete c;
  
+  
+    
+  //-- tRes of L, R, chRef after triangulation
+  //
+ 
+  //std::cout << " >>>>>> Energy  ..." << std::endl;
+  plotTimeResolution(g_tRes_energyRatioCorr_L,
+                     g_tRes_energyRatioCorr_R, 
+                     g_tRes_energyRatioCorr_chRef,
+                     ymin, ymax, useTimeAverage, 613, plotDir,   
+                     "energyRatioCorr" );
+
+  //std::cout << " >>>>>> Energy +  phase ..." << std::endl;
+  plotTimeResolution(g_tRes_energyRatioCorr_phaseCorr_L,
+                     g_tRes_energyRatioCorr_phaseCorr_R, 
+                     g_tRes_energyRatioCorr_phaseCorr_chRef, 
+                     ymin, ymax, useTimeAverage, 867,  plotDir,   
+                     "energyRatioCorr_phaseCorr" );
+
+
+  //std::cout << " >>>>>> Energy + tot ..." << std::endl;
+  plotTimeResolution(g_tRes_energyRatioCorr_totRatioCorr_L,
+                     g_tRes_energyRatioCorr_totRatioCorr_R, 
+                     g_tRes_energyRatioCorr_totRatioCorr_chRef, 
+                     ymin, ymax, useTimeAverage, 887,  plotDir,   
+                     "energyRatioCorr_totRatioCorr" );
+
+  //std::cout << " >>>>>> Energy + tot + phase ..." << std::endl;
+  plotTimeResolution(g_tRes_energyRatioCorr_totRatioCorr_phaseCorr_L,
+                     g_tRes_energyRatioCorr_totRatioCorr_phaseCorr_R, 
+                     g_tRes_energyRatioCorr_totRatioCorr_phaseCorr_chRef, 
+                     ymin, ymax, useTimeAverage, 418,  plotDir,   
+                     "energyRatioCorr_totRatioCorr_phaseCorr" );
+
+   // --tot corr +  energy corr
+  c = new TCanvas("c","c", 800, 600);
+  c->SetGridx();
+  c->SetGridy();
+  hdummy2->GetYaxis()->SetTitle("#sigma(t_{ch}) [ps]");
+  hdummy2->Draw();
+  for (auto label : labelLR ){   
+    g_tRes_energyRatioCorr_L->Draw("psame") ;
+    g_tRes_energyRatioCorr_R->Draw("psame") ;
+    g_tRes_energyRatioCorr_totRatioCorr_L->Draw("psame") ;
+    g_tRes_energyRatioCorr_totRatioCorr_R->Draw("psame") ;
+  }
+  g_tRes_energyRatioCorr_chRef-> SetLineColor(921);  // kGray +1
+  g_tRes_energyRatioCorr_chRef-> SetMarkerColor(921);
+  g_tRes_energyRatioCorr_chRef->Draw("psame") ;
+  g_tRes_energyRatioCorr_totRatioCorr_chRef->Draw("psame") ;
+
+  TLegend *lege = new TLegend(0.20, 0.7, 0.8, 0.88);
+  lege->SetBorderSize(0);
+  lege->SetFillStyle(0);
+  lege->SetNColumns(2);
+  lege->AddEntry(g_tRes_energyRatioCorr_L, "E ratio corr, L", "P");
+  lege->AddEntry(g_tRes_energyRatioCorr_totRatioCorr_L, "E & tot ratio corr L", "P");
+  lege->AddEntry(g_tRes_energyRatioCorr_R, "E ratio corr, R", "P");
+  lege->AddEntry(g_tRes_energyRatioCorr_totRatioCorr_R, "E & tot ratio corr R", "P");
+  lege->AddEntry(g_tRes_energyRatioCorr_chRef, "E ratio corr, chRef", "P");
+  lege->AddEntry(g_tRes_energyRatioCorr_totRatioCorr_chRef, "E & tot ratio corr chRef", "P");
+  lege->Draw("same");
+
+
+
+  c->Print(Form("%s/c_tRes_CFR_energyRatioCorr_totRatioCorr.png",plotDir.c_str()));
+  c->Print(Form("%s/c_tRes_CFR_energyRatioCorr_totRatioCorr.pdf",plotDir.c_str()));
+  delete c;
+  delete lege; 
+
+   // --tot corr +  energy corr
+  c = new TCanvas("c","c", 800, 600);
+  c->SetGridx();
+  c->SetGridy();
+  hdummy2->Draw();
+  for (auto label : labelLR ){   
+    g_tRes_energyRatioCorr_phaseCorr_L->Draw("psame") ;
+    g_tRes_energyRatioCorr_phaseCorr_R->Draw("psame") ;
+    g_tRes_energyRatioCorr_totRatioCorr_phaseCorr_L->Draw("psame") ;
+    g_tRes_energyRatioCorr_totRatioCorr_phaseCorr_R->Draw("psame") ;
+  }
+
+  g_tRes_energyRatioCorr_phaseCorr_chRef->Draw("psame") ;
+  g_tRes_energyRatioCorr_phaseCorr_chRef->SetLineColor(921) ;
+  g_tRes_energyRatioCorr_phaseCorr_chRef->SetMarkerColor(921) ;
+  g_tRes_energyRatioCorr_totRatioCorr_phaseCorr_chRef->Draw("psame") ;
+  lege = new TLegend(0.20, 0.7, 0.8, 0.88);
+  lege->SetBorderSize(0);
+  lege->SetFillStyle(0);
+  lege->SetNColumns(2);
+  lege->AddEntry(g_tRes_energyRatioCorr_phaseCorr_L, "E ratio + phase corr, L", "P");
+  lege->AddEntry(g_tRes_energyRatioCorr_totRatioCorr_phaseCorr_L, "E & tot ratio + phase corr L", "P");
+  lege->AddEntry(g_tRes_energyRatioCorr_phaseCorr_R, "E ratio + phase corr, R", "P");
+  lege->AddEntry(g_tRes_energyRatioCorr_totRatioCorr_phaseCorr_R, "E & tot ratio + phase corr R", "P");
+  lege->AddEntry(g_tRes_energyRatioCorr_phaseCorr_chRef, "E ratio + phase corr, chRef", "P");
+  lege->AddEntry(g_tRes_energyRatioCorr_totRatioCorr_phaseCorr_chRef, "E & tot ratio + phase corr chRef", "P");
+  lege->Draw("same");
+
+
+
+  c->Print(Form("%s/c_tRes_CFR_energyRatioCorr_totRatioCorr_phaseCorr.png",plotDir.c_str()));
+  c->Print(Form("%s/c_tRes_CFR_energyRatioCorr_totRatioCorr_phaseCorr.pdf",plotDir.c_str()));
+  delete c;
+  delete lege;  
+
   
 }
  
