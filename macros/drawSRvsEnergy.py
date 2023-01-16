@@ -263,12 +263,12 @@ for bar in bars[run]:
     h_ratio_lin = ROOT.TH1F("h_ratio_lin_bar"+bar+lab,"h_ratio_lin_bar"+bar+lab,100,0,2)
     h_ratio_over = ROOT.TH1F("h_ratio_over_bar"+bar+lab,"h_ratio_over_bar"+bar+lab,100,0,2)
     
-    # 1/ energy
+    # energy
     c1.Clear()
     #data.Draw("energy"+lab+" >> h_En_bar"+bar+lab,"(energyL + energyR )/2 > "+energyCut[run][bar]+" && (energyL + energyR )/2 < 950","GOFF")
     data.Draw("energy"+lab+" >> h_En_bar"+bar+lab,"(energyL + energyR )/2 < 950","GOFF")
  
-    print (energyCut[run][bar] , findMinEnergy(h_En))                    
+    #print (energyCut[run][bar] , findMinEnergy(h_En))                    
     minEnergy = str(findMinEnergy(h_En))
  
     h_En.Draw("")
@@ -290,40 +290,12 @@ for bar in bars[run]:
     h_SR_vs_t1fine.GetYaxis().SetTitle("SR  [#muA / ns]")
  
 
- 
-    # SR vs energy
-    #data.Draw("8*0.313/tot"+lab+" : energy"+lab+" >> h_SR_vs_energy_bar"+bar+lab,"(energyL + energyR )/2 > "+energyCut[run][bar]+" && (energyL + energyR )/2 < 950","GOFF")
-    data.Draw("8*0.313/tot"+lab+" : energy"+lab+" >> h_SR_vs_energy_bar"+bar+lab,"(energyL + energyR )/2 > "+minEnergy+" && (energyL + energyR )/2 < 950","GOFF")
-
-    #energy = data.GetVal(1)
-
-    c1.Clear()
-    c1.SetGridx()
-    c1.SetGridy()
-    c1.SetLogz()
-    h_SR_vs_energy.GetZaxis().SetRangeUser(0.1,100)
-    h_SR_vs_energy.Draw("colz")
-    h_SR_vs_energy_pfx = h_SR_vs_energy.ProfileX()
-    h_SR_vs_energy_pfx.Draw("same")
-    
-    lin = ROOT.TF1("lin","pol1", center-(fact)*rms,center+fact*rms)
-    lin.SetLineColor(2)
-    h_SR_vs_energy_pfx.Fit(lin, "QR")
-    
-    q = lin.GetParameter(0)
-    m = lin.GetParameter(1)
-    
-    lin. Draw("same")
-                                                        
-    c1.Print(outdir + "c_bar"+bar+lab+"_SR_vs_energy_"+mod[run]+".png")
+    cut = "energy%s > %s  && (energyL + energyR )/2 < 950"%(lab,minEnergy)
 
     # SR vs PHASE
     #data.Draw("8*0.313/tot"+lab+" : 1/energy"+lab+" >> h_SR_vs_overenergy_bar"+bar+lab,"(energyL + energyR )/2 > "+energyCut[run][bar]+" && (energyL + energyR )/2 < 950","GOFF")
-    data.Draw("8*0.313/tot"+lab+" : t1fine"+lab+" >> h_SR_vs_t1fine_bar"+bar+lab,"(energyL + energyR )/2 > "+minEnergy+" && (energyL + energyR )/2 < 950","GOFF")
-    #SR = data.GetVal(0)
-    #t1fine = data.GetVal(1)
-    #nent = h_SR_vs_t1fine.GetEntries()
-    
+    data.Draw("8*0.313/tot"+lab+" : t1fine"+lab+" >> h_SR_vs_t1fine_bar"+bar+lab, cut ,"GOFF")
+   
     c1.Clear()
     c1.SetGridx()
     c1.SetGridy()
@@ -338,11 +310,8 @@ for bar in bars[run]:
   
     # SR vs 1 over energy
     #data.Draw("8*0.313/tot"+lab+" : 1/energy"+lab+" >> h_SR_vs_overenergy_bar"+bar+lab,"(energyL + energyR )/2 > "+energyCut[run][bar]+" && (energyL + energyR )/2 < 950","GOFF")
-    data.Draw("8*0.313/tot"+lab+" : 1/energy"+lab+" >> h_SR_vs_overenergy_bar"+bar+lab,"(energyL + energyR )/2 > "+minEnergy+" && (energyL + energyR )/2 < 950","GOFF")
-    SR = data.GetVal(0)
-    overenergy = data.GetVal(1)
-    nent = h_SR_vs_overenergy.GetEntries()
-    
+    data.Draw("8*0.313/tot"+lab+" : 1/energy"+lab+" >> h_SR_vs_overenergy_bar"+bar+lab,cut,"GOFF")
+   
     c1.Clear()
     c1.SetGridx()
     c1.SetGridy()
@@ -365,20 +334,49 @@ for bar in bars[run]:
     overx. Draw("same")
                                                         
     c1.Print(outdir + "c_bar"+bar+lab+"_SR_vs_overenergy_"+mod[run]+".png")
+
+    # SR vs energy
+    #data.Draw("8*0.313/tot"+lab+" : energy"+lab+" >> h_SR_vs_energy_bar"+bar+lab,"(energyL + energyR )/2 > "+energyCut[run][bar]+" && (energyL + energyR )/2 < 950","GOFF")
+    data.Draw("8*0.313/tot"+lab+" : energy"+lab+" >> h_SR_vs_energy_bar"+bar+lab,cut,"GOFF")
+    SR = data.GetVal(0)
+    energy = data.GetVal(1)
+    nent = h_SR_vs_energy.GetEntries()
+ 
+    c1.Clear()
+    c1.SetGridx()
+    c1.SetGridy()
+    c1.SetLogz()
+    h_SR_vs_energy.GetZaxis().SetRangeUser(0.1,100)
+    h_SR_vs_energy.Draw("colz")
+    h_SR_vs_energy_pfx = h_SR_vs_energy.ProfileX()
+    h_SR_vs_energy_pfx.Draw("same")
     
+    #lin = ROOT.TF1("lin","pol1", center-(fact)*rms,center+fact*rms)
+    lin = ROOT.TF1("lin","pol1", float(minEnergy), center+fact*rms)
+    lin.SetLineColor(2)
+    h_SR_vs_energy_pfx.Fit(lin, "QR")
+    
+    q = lin.GetParameter(0)
+    m = lin.GetParameter(1)
+    
+    lin. Draw("same")
+                                                        
+    c1.Print(outdir + "c_bar"+bar+lab+"_SR_vs_energy_"+mod[run]+".png")
+
+   
     #print nent
-    
     for en in range(0,int(nent)):
         #if (totL[en] < center +0.2 and totR[en] < center + 0.2 and totL[en] > center -0.2 and totR[en] > center -0.2):
         #if (overenergy[en] > 1./center - fact*rms and overenergy[en] < 1./center + fact*rms ):
           #if (m * energy[en] + q > 0 ): ratio = SR[en] / (m * energy[en] + q )  
-        if (a / overenergy[en] + b  != 0 ): ratio = SR[en] / (a / overenergy[en] + b )  
+        #if (a / overenergy[en] + b  != 0 ): ratio = SR[en] / (a / overenergy[en] + b )  
+        if (a / (1/energy[en]) + b  != 0 ): ratio = SR[en] / (a / (1/energy[en]) + b )  
         else: ratio = -9999
         h_ratio_over.Fill (ratio)
 
 
         #if (1./overenergy[en] > center - fact*rms and 1./overenergy[en] < center + fact*rms ):
-        if (m * 1/overenergy[en] + q != 0 ): ratio = SR[en] / (m * 1/overenergy[en] + q )  
+        if (m * energy[en] + q != 0 ): ratio = SR[en] / (m * energy[en] + q )  
         else: ratio = -9999
         h_ratio_lin.Fill (ratio)
         #print SR[en]
@@ -429,7 +427,8 @@ for bar in bars[run]:
     #print "I'm channel " , bar, lab, " that's my ch2 reduced: ", g.GetChisquare() / g.GetNDF() 
 
     # selections to avoid channels with terrible fits
-    if mean1 < 0.8 or  mean2 < 0.8 : continue
+    if mean2 < 0.8 : continue
+    if errsigma2/sigma2 > 0.2 : continue
     if g.GetChisquare() / g.GetNDF() > 2 : continue
      
     if lab == 'L':
