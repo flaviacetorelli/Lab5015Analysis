@@ -31,6 +31,19 @@ ROOT.gROOT.SetBatch(True)
 ROOT.gErrorIgnoreLevel = ROOT.kWarning
 
 
+def findMinEnergy(h_energy):
+
+  fitLandau = ROOT.TF1("fitLandau","landau", 0, 1000)
+  h_energy.GetXaxis().SetRangeUser(50,800)
+  maxbin = h_energy.GetMaximumBin()
+  peak = h_energy.GetBinCenter(maxbin)
+  fitLandau.SetRange(peak*0.8, peak*1.2)
+  fitLandau.SetParameter(1,peak)
+  fitLandau.SetParameter(2,0.1*peak)
+  h_energy.Fit("fitLandau","QR")
+  energyMin = fitLandau.GetParameter(1)*0.75
+  return energyMin
+
 def dofinalPlot(gR, gL, label, outdir):
 
   ROOT.gStyle.SetOptFit(0)
@@ -59,7 +72,7 @@ def dofinalPlot(gR, gL, label, outdir):
   myfitL.SetLineColor(gL.GetLineColor())
   myfitL.SetParameter(0, gL.GetMean(2))
   gL.Fit("myfitL")
-  latexL = ROOT.TLatex(0.50,0.85, "<#sigma> = %.3f #pm %.3f ps" % ( myfitL.GetParameter(0), myfitL.GetParError(0)))
+  latexL = ROOT.TLatex(0.50,0.85, "<#sigma> = %.3f #pm %.3f" % ( myfitL.GetParameter(0), myfitL.GetParError(0)))
   latexL.SetNDC()
   latexL.SetTextFont(42)
   latexL.SetTextSize(0.04)
@@ -69,7 +82,7 @@ def dofinalPlot(gR, gL, label, outdir):
   myfitR.SetLineStyle(2)
   myfitR.SetParameter(0, gR.GetMean(2))
   gR.Fit("myfitR")
-  latexR = ROOT.TLatex(0.50,0.72, "<#sigma> = %.3f #pm %.3f ps" % ( myfitR.GetParameter(0), myfitR.GetParError(0)))
+  latexR = ROOT.TLatex(0.50,0.72, "<#sigma> = %.3f #pm %.3f" % ( myfitR.GetParameter(0), myfitR.GetParError(0)))
   latexR.SetNDC()
   latexR.SetTextFont(42)
   latexR.SetTextSize(0.04)
@@ -78,7 +91,13 @@ def dofinalPlot(gR, gL, label, outdir):
 
   c.Print(outdir + "c_"+label+"_vs_bar.png")
 
-
+#parse arguments
+parser = parser = argparse.ArgumentParser()
+parser.add_argument("--run",       action="store",      type=int,                         help="run number")  
+parser.add_argument("--th",        action="store",      type=str,                         help="first thr value in ADC")  
+parser.add_argument("--rms",       action="store",      type=float,   default=2.,         help="rms to perform fit")
+parser.add_argument("--label",     action="store",      type=str,                         help="label to define output folder")
+args = parser.parse_args()
 
 energyCut5301 = {
 "00" :"50",
@@ -140,25 +159,29 @@ energyCut5297 = {
 
 
 #FIXME choose run
-run = 5297
+#run = 5297
 #run = 5301
 #run = 5309
 #run = 5196
 
 #FIXME choose fit ranges
-fact = 2. #for the ranges of fit, how many sigma do u want?
+#fact = 2. #for the ranges of fit, how many sigma do u want?
 
-#good bars for run
-if run == 5301 or run == 5309: bars = ['00', '01', '02', '03', '04', '05','06', '07', '08','09','10','11','12','13','14','15']
-elif run == 5196 or run == 5195: bars = ['00', '02', '03', '04', '05','06', '07', '08','09','10','11','12','13','14']
-elif run == 5297: bars =  [ '01', '02', '03', '04', '05','06', '07', '08','09','10','11','12','13','14']
+bars = {
+5301 : ['00', '01', '02', '03', '04', '05','06', '07', '08','09','10','11','12','13','14','15'],
+5309 : ['00', '01', '02', '03', '04', '05','06', '07', '08','09','10','11','12','13','14','15'],
+5195 : ['00', '02', '03', '04', '05','06', '07', '08','09','10','11','12','13','14'],
+5196 : ['00', '02', '03', '04', '05','06', '07', '08','09','10','11','12','13','14'],
+5297 : [ '01', '02', '03', '04', '05','06', '07', '08','09','10','11','12','13','14']
+}
+
 
 #energy cut to reject some noise events
-if run == 5301: energyCut = energyCut5301
-elif run == 5309: energyCut = energyCut5309
-elif run == 5297: energyCut = energyCut5297
-
-th = "09"
+energyCut = {
+5301 : energyCut5301, 
+5309 : energyCut5309, 
+5297 : energyCut5297,
+}
 
 vov = {
 5301 : '1.80',
@@ -176,19 +199,22 @@ mod = {
 5195 : 'HPK_nonirr'
 }
 
+
+run = args.run
+th = args.th
+fact = args.rms
+
 print "Analyzing run: " , run , " at ith: ", th
 #file0 =ROOT.TFile.Open("/afs/cern.ch/work/f/fcetorel/private/work2/TBJune22/Lab5015Analysis/plots/moduleCharacterization_step1_run"+str(int(run))+".root"
 #outdir = "/eos/user/f/fcetorel/www/MTD/TBjune22/run"+str(int(run))+"/correlationPlot/tBt/nooffset_prova/"
 file0 = ROOT.TFile.Open("/afs/cern.ch/work/f/fcetorel/private/work2/TBJune22/Lab5015Analysis/plots/moduleCharacterization_step1_TbToffFit_run"+str(int(run))+".root")
 #print file0
 #outdir = "/eos/user/f/fcetorel/www/MTD/TBjune22/run"+str(int(run))+"/correlationPlot/SRvsEn/offset_nocut/"
-outdir = "/eos/user/f/fcetorel/www/MTD/TBjune22/run"+str(int(run))+"/correlationPlot/SRvsEn/th"+th+"/offset_enCut_final/"
+outdir = "/eos/user/f/fcetorel/www/MTD/TBjune22/run"+str(int(run))+"/correlationPlot/SRvsEn/th"+th+"/offset_enCut_final/%s/"%(args.label)
 if not os.path.exists(outdir):
     os.makedirs(outdir)
 os.system("cp /eos/user/f/fcetorel/www/index.php "+outdir)
-#outdir = "./plotti/"
-#print file0
-#moduleCharacterization_step1_TbToffFit_run5301.root
+
 gLinL = ROOT.TGraphErrors()
 gLinR = ROOT.TGraphErrors()
 gOverL = ROOT.TGraphErrors()
@@ -200,7 +226,7 @@ iL = 0
 ibar = 0
 
 
-for bar in bars:
+for bar in bars[run]:
   ibar = int(bar)
   data = file0.Get("data_bar"+bar+"L-R_Vov"+vov[run]+"_th"+th)
   #print "data_bar"+bar+"L-R_Vov"+vov[run]+"_th05"    
@@ -210,7 +236,7 @@ for bar in bars:
   h_SRratio_vs_Eratio.GetYaxis().SetTitle("SR L / SR R")
 
   # SRratio vs energyRatio
-  data.Draw("totR/totL:energyL/energyR >> h_SRratio_vs_Eratio_bar"+bar,"(energyL + energyR )/2 > "+energyCut[bar]+" && (energyL + energyR )/2 < 950","GOFF")
+  data.Draw("totR/totL:energyL/energyR >> h_SRratio_vs_Eratio_bar"+bar,"(energyL + energyR )/2 > "+energyCut[run][bar]+" && (energyL + energyR )/2 < 950","GOFF")
   SR = data.GetVal(0)
   energy = data.GetVal(1)
   nent = h_SRratio_vs_Eratio.GetEntries()
@@ -225,16 +251,7 @@ for bar in bars:
   h_SRratio_vs_Eratio_pfx = h_SRratio_vs_Eratio.ProfileX()
   h_SRratio_vs_Eratio_pfx.Draw("same")
   
-  #lin = ROOT.TF1("lin","pol1", center-fact*rms,center+fact*rms)
-  #lin2 = ROOT.TF1("lin","[0]/x + [1]")
-  #lin2.SetLineColor(2)
-  #h_SRratio_vs_Eratio_pfx.Fit(lin2, "Q")
-  #
-  #q = lin.GetParameter(0)
-  #m = lin.GetParameter(1)
-  #
-  #lin2.Draw("same")
-                                                      
+                                                     
   c1.Print(outdir + "c_bar"+bar+"_SRratio_vs_Eratio_"+mod[run]+".png")
  
 
@@ -242,14 +259,18 @@ for bar in bars:
   for lab in label: 
     h_En = ROOT.TH1F("h_En_bar"+bar+lab,"h_En_bar"+bar+lab,100,0,900)
     h_En.GetXaxis().SetTitle("Energy ")                 
-                        
+    
     h_ratio_lin = ROOT.TH1F("h_ratio_lin_bar"+bar+lab,"h_ratio_lin_bar"+bar+lab,100,0,2)
     h_ratio_over = ROOT.TH1F("h_ratio_over_bar"+bar+lab,"h_ratio_over_bar"+bar+lab,100,0,2)
     
     # 1/ energy
     c1.Clear()
-    data.Draw("energy"+lab+" >> h_En_bar"+bar+lab,"(energyL + energyR )/2 > "+energyCut[bar]+" && (energyL + energyR )/2 < 950","GOFF")
-  
+    #data.Draw("energy"+lab+" >> h_En_bar"+bar+lab,"(energyL + energyR )/2 > "+energyCut[run][bar]+" && (energyL + energyR )/2 < 950","GOFF")
+    data.Draw("energy"+lab+" >> h_En_bar"+bar+lab,"(energyL + energyR )/2 < 950","GOFF")
+ 
+    print (energyCut[run][bar] , findMinEnergy(h_En))                    
+    minEnergy = str(findMinEnergy(h_En))
+ 
     h_En.Draw("")
     center = h_En.GetMean()  # using this to set the range of linear fit and to set x axis of histo
     rms = h_En.GetRMS()  # using this to set the range of linear fit
@@ -257,18 +278,22 @@ for bar in bars:
  
 
     h_SR_vs_overenergy = ROOT.TH2F("h_SR_vs_overenergy_bar"+bar+lab,"h_SR_vs_overenergy_bar"+bar+lab,100,0,1/center + 3 * (rms/(center*center)),100,0,30)
-    h_SR_vs_overenergy.GetXaxis().SetTitle("1 / energy")
-    h_SR_vs_overenergy.GetYaxis().SetTitle("SR")
+    h_SR_vs_overenergy.GetXaxis().SetTitle("1 / energy [a.u.]")
+    h_SR_vs_overenergy.GetYaxis().SetTitle("SR [#muA / ns]")
   
     h_SR_vs_energy = ROOT.TH2F("h_SR_vs_energy_bar"+bar+lab,"h_SR_vs_overenergy_bar"+bar,100,0,center + 3 *rms,100,0,30)
-    h_SR_vs_energy.GetXaxis().SetTitle("energy")
-    h_SR_vs_energy.GetYaxis().SetTitle("SR")
+    h_SR_vs_energy.GetXaxis().SetTitle("energy [a.u.]")
+    h_SR_vs_energy.GetYaxis().SetTitle("SR  [#muA / ns]")
     
+    h_SR_vs_t1fine = ROOT.TH2F("h_SR_vs_t1fine_bar"+bar+lab,"h_SR_vs_t1fine_bar"+bar,50,0,1000,100,0,30)
+    h_SR_vs_t1fine.GetXaxis().SetTitle("t1fine [a.u.]")
+    h_SR_vs_t1fine.GetYaxis().SetTitle("SR  [#muA / ns]")
  
 
  
     # SR vs energy
-    data.Draw("8*0.313/tot"+lab+" : energy"+lab+" >> h_SR_vs_energy_bar"+bar+lab,"(energyL + energyR )/2 > "+energyCut[bar]+" && (energyL + energyR )/2 < 950","GOFF")
+    #data.Draw("8*0.313/tot"+lab+" : energy"+lab+" >> h_SR_vs_energy_bar"+bar+lab,"(energyL + energyR )/2 > "+energyCut[run][bar]+" && (energyL + energyR )/2 < 950","GOFF")
+    data.Draw("8*0.313/tot"+lab+" : energy"+lab+" >> h_SR_vs_energy_bar"+bar+lab,"(energyL + energyR )/2 > "+minEnergy+" && (energyL + energyR )/2 < 950","GOFF")
 
     #energy = data.GetVal(1)
 
@@ -291,11 +316,29 @@ for bar in bars:
     lin. Draw("same")
                                                         
     c1.Print(outdir + "c_bar"+bar+lab+"_SR_vs_energy_"+mod[run]+".png")
+
+    # SR vs PHASE
+    #data.Draw("8*0.313/tot"+lab+" : 1/energy"+lab+" >> h_SR_vs_overenergy_bar"+bar+lab,"(energyL + energyR )/2 > "+energyCut[run][bar]+" && (energyL + energyR )/2 < 950","GOFF")
+    data.Draw("8*0.313/tot"+lab+" : t1fine"+lab+" >> h_SR_vs_t1fine_bar"+bar+lab,"(energyL + energyR )/2 > "+minEnergy+" && (energyL + energyR )/2 < 950","GOFF")
+    #SR = data.GetVal(0)
+    #t1fine = data.GetVal(1)
+    #nent = h_SR_vs_t1fine.GetEntries()
+    
+    c1.Clear()
+    c1.SetGridx()
+    c1.SetGridy()
+    c1.SetLogz()
+    h_SR_vs_t1fine.GetZaxis().SetRangeUser(0.1,100)
+    h_SR_vs_t1fine.Draw("colz")
+    h_SR_vs_t1fine_pfx = h_SR_vs_t1fine.ProfileX()
+    h_SR_vs_t1fine_pfx.Draw("same")
+                                                       
+    c1.Print(outdir + "c_bar"+bar+lab+"_SR_vs_t1fine_"+mod[run]+".png")
   
   
     # SR vs 1 over energy
-    data.Draw("8*0.313/tot"+lab+" : 1/energy"+lab+" >> h_SR_vs_overenergy_bar"+bar+lab,"(energyL + energyR )/2 > "+energyCut[bar]+" && (energyL + energyR )/2 < 950","GOFF")
-    #data.Draw("totL: 1/energyL >> h_SR_vs_overenergy_bar"+bar,"(energyL + energyR )/2 > "+energyCut[bar]+" && (energyL + energyR )/2 < 950","GOFF")
+    #data.Draw("8*0.313/tot"+lab+" : 1/energy"+lab+" >> h_SR_vs_overenergy_bar"+bar+lab,"(energyL + energyR )/2 > "+energyCut[run][bar]+" && (energyL + energyR )/2 < 950","GOFF")
+    data.Draw("8*0.313/tot"+lab+" : 1/energy"+lab+" >> h_SR_vs_overenergy_bar"+bar+lab,"(energyL + energyR )/2 > "+minEnergy+" && (energyL + energyR )/2 < 950","GOFF")
     SR = data.GetVal(0)
     overenergy = data.GetVal(1)
     nent = h_SR_vs_overenergy.GetEntries()
@@ -359,7 +402,7 @@ for bar in bars:
     mean1 = g.GetParameter(1)
     sigma1 = g.GetParameter(2)
     errsigma1 = g.GetParError(2)
-    t.DrawLatex(0.2, 0.5, '#sigma_{t} = %.3f #pm %.3f'%(sigma1 ,errsigma1))
+    t.DrawLatex(0.2, 0.5, '#sigma = %.3f #pm %.3f'%(sigma1 ,errsigma1))
     
   
     ch.Print(outdir + "c_bar"+bar+lab+"_Res_"+mod[run]+".png")
@@ -382,7 +425,7 @@ for bar in bars:
     mean2 = g.GetParameter(1)
     sigma2 = g.GetParameter(2)
     errsigma2 = g.GetParError(2)
-    t.DrawLatex(0.2, 0.5, '#sigma_{t} = %.3f #pm %.3f'%(sigma2 ,errsigma2))
+    t.DrawLatex(0.2, 0.5, '#sigma = %.3f #pm %.3f'%(sigma2 ,errsigma2))
     #print "I'm channel " , bar, lab, " that's my ch2 reduced: ", g.GetChisquare() / g.GetNDF() 
 
     # selections to avoid channels with terrible fits
