@@ -78,13 +78,13 @@ def getTimeResolution(h1_deltaT):
 
 
 # INPUT
-inputdir = '/afs/cern.ch/work/f/fcetorel/private/work2/TBMay2023/Lab5015Analysis/plots/TOFHIR2C/'
+inputdir = '/data1/cmsdaq/Lab5015Analysis_new/TB_CERN_June22/Lab5015Analysis/plots/'
 #source = 'Laser'
 source = 'TB'
 
 
 # OUTPUT
-outdir  = '/eos/user/f/fcetorel/www/MTD/TBMay23/TOFHIR2C/ModuleCharacterization/'
+outdir  = '/var/www/html/TOFHIR2X/MTDTB_CERN_May23/ModuleCharacterization/'
 outdir=outdir+args.outFolder
 outFileName = outdir+'/summaryPlots_'+args.outFolder+'.root'
 print 'Saving plots in ', outdir
