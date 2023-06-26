@@ -78,13 +78,13 @@ def getTimeResolution(h1_deltaT):
 
 
 # INPUT
-inputdir = '/data1/cmsdaq/Lab5015Analysis_new/TB_CERN_June22/Lab5015Analysis/plots/'
+inputdir = '/afs/cern.ch/work/f/fcetorel/private/work2/TBMay2023/Lab5015Analysis/plots/TOFHIR2C/'
 #source = 'Laser'
 source = 'TB'
 
 
 # OUTPUT
-outdir  = '/var/www/html/TOFHIR2X/MTDTB_CERN_May23/ModuleCharacterization/'
+outdir  = '/eos/user/f/fcetorel/www/MTD/TBMay23/TOFHIR2C/ModuleCharacterization/'
 outdir=outdir+args.outFolder
 outFileName = outdir+'/summaryPlots_'+args.outFolder+'.root'
 print 'Saving plots in ', outdir
@@ -167,7 +167,7 @@ cols = { 0.50 : 45,
 
 # --- prepare output dir
 if (os.path.isdir(outdir) == False): 
-    os.system('mkdir %s'%outdir)
+    os.system('mkdir -p %s'%outdir)
 os.system('mkdir %s/summaryPlots/'%outdir)
 os.system('mkdir %s/summaryPlots/tot/'%outdir)
 os.system('mkdir %s/summaryPlots/energy/'%outdir)
@@ -211,16 +211,28 @@ if ('528' in args.outFolder):
     goodBars[3.50] = [1,2,3,4,5,6,7,8,9,10,11,12,13,14] 
     goodBars[1.50] = [2,3,4,5,7,8,9,10,11,12,13]
 
-elif ('813' in args.outFolder):
+#elif ('813' in args.outFolder):
+#    plots_label = 'HPK (25 #mum, type2) + LYSO813 (prod1, type2)'
+#    for vov in Vovs:
+#        VovsEff[vov] = vov 
+#    goodBars[3.50] = [0,1,2,3,4,5,7,8,9,10,11,12,13]
+#    goodBars[2.00] = [0,1,2,3,4,5,7,8,9,10,11,12,13]
+#    goodBars[1.50] = [0,1,2,3,4,5,7,8,9,10,11,12,13]
+#    goodBars[1.00] = [0,1,2,3,4,5,7,8,9,10,11,12,13]
+#    goodBars[0.80] = [0,1,2,3,4,5,7,8,9,10,11,12,13]
+#    goodBars[0.50] = [0,2,3,4,5,7,8,9,10,11,12,13]
+
+elif ('813' in args.outFolder): #TOFHIR2C
     plots_label = 'HPK (25 #mum, type2) + LYSO813 (prod1, type2)'
     for vov in Vovs:
         VovsEff[vov] = vov 
     goodBars[3.50] = [0,1,2,3,4,5,7,8,9,10,11,12,13]
     goodBars[2.00] = [0,1,2,3,4,5,7,8,9,10,11,12,13]
     goodBars[1.50] = [0,1,2,3,4,5,7,8,9,10,11,12,13]
-    goodBars[1.00] = [0,1,2,3,4,5,7,8,9,10,11,12,13]
+    goodBars[1.00] = [0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15]
     goodBars[0.80] = [0,1,2,3,4,5,7,8,9,10,11,12,13]
     goodBars[0.50] = [0,2,3,4,5,7,8,9,10,11,12,13]
+
 
 elif ('818' in args.outFolder):
     plots_label = 'HPK (25 #mum, type1) + LYSO818 (prod1, type1)'
@@ -330,8 +342,7 @@ for label in label_list:
                # -- tot vs thr, Vov, bar
                if ( inputFile.GetListOfKeys().Contains('h1_tot_bar%02d%s_Vov%.02f_th%02d'%(bar, l, vov, thr)) ): 
                   h1_tot = inputFile.Get('h1_tot_bar%02d%s_Vov%.02f_th%02d'%(bar, l, vov, thr))
-                  if (h1_tot==None or h1_tot.GetEntries()==0): continue
-                        
+                  if ((h1_tot==None or h1_tot.GetEntries()==0) and (l == 'R' or l == 'L')): continue
                   max1 = h1_tot.GetBinCenter(h1_tot.GetMaximumBin())
                   h1_tot.GetXaxis().SetRangeUser(0.25*max1,2.*max1)
                   fitFunc = ROOT.TF1('fitFunc','gaus',max1-0.05*max1,max1+0.05*max1)
@@ -347,45 +358,45 @@ for label in label_list:
                   if (thr == thRef):
                      g_tot_vs_bar[l, vov, thr].SetPoint(g_tot_vs_bar[l, vov, thr].GetN(), bar, fitFunc.GetParameter(1) )    
                      g_tot_vs_bar[l, vov, thr].SetPointError(g_tot_vs_bar[l, vov, thr].GetN()-1, 0, fitFunc.GetParError(1) )    
-                    
-                  # -- energy vs thr, Vov, bar
-                  if ( inputFile.GetListOfKeys().Contains('h1_energy_bar%02d%s_Vov%.02f_th%02d'%(bar, l, vov, thr)) ): 
-                     h1_energy = inputFile.Get('h1_energy_bar%02d%s_Vov%.02f_th%02d'%(bar, l, vov, thr))
-                     if ( h1_energy == None or h1_energy.GetEntries()==0): continue
-                     energyPeak = {}
-                     if (source == 'Na22'):
-                        for peak in peaks:
-                           energyPeak[peak] = [h1_energy.GetFunction('fitFunc_%d'%peak).GetParameter(1), h1_energy.GetFunction('fitFunc_%d'%peak).GetParError(1)]
-                     elif ( source == 'Laser'):
-                        fitFunc = ROOT.TF1('fitFunc','gaus',0, 1000)
-                        h1_energy.Fit('fitFunc','QNRS+')
-                        h1_energy.Fit('fitFunc','QNS+','', fitFunc.GetParameter(1)-fitFunc.GetParameter(2), fitFunc.GetParameter(1)+fitFunc.GetParameter(2))
-                        for peak in peaks:
-                           energyPeak[peak] = [ fitFunc.GetParameter(1), fitFunc.GetParError(1)]
-                     elif ( source == 'TB'):
-                        #fitFunc = h1_energy.GetFunction('f_landau_bar%02d%s_Vov%.02f_vth1_%02d'%(bar, l, vov, thr))
-                        #if (fitFunc==None): continue
-                        fitFunc = ROOT.TF1('f_landau_bar%02d%s_Vov%.02f_vth1_%02d'%(bar, l, vov, thr), '[0]*TMath::Landau(x,[1],[2])', 0,1000.)
-                        h1_energy.GetXaxis().SetRangeUser(50,800)
-                        emax = h1_energy.GetBinCenter(h1_energy.GetMaximumBin())
-                        fitFunc.SetParameters(10, emax, 30)
-                        fitFunc.SetRange(0.8*emax, 1.5*emax)
-                        h1_energy.Fit(fitFunc,'QR')
-                        #print bar, vov, thr, emax, fitFunc.GetParameter(1), fitFunc.GetParError(1)
-                        for peak in peaks:
-                           energyPeak[peak] = [fitFunc.GetParameter(1), fitFunc.GetParError(1)] 
-                                
-
+              # -- energy vs thr, Vov, bar
+               if ( inputFile.GetListOfKeys().Contains('h1_energy_bar%02d%s_Vov%.02f_th%02d'%(bar, l, vov, thr)) ):
+                  #print 'h1_energy_bar%02d%s_Vov%.02f_th%02d'%(bar, l, vov, thr) 
+                  h1_energy = inputFile.Get('h1_energy_bar%02d%s_Vov%.02f_th%02d'%(bar, l, vov, thr))
+                  if ( h1_energy == None or h1_energy.GetEntries()==0): continue
+                  energyPeak = {}
+                  if (source == 'Na22'):
                      for peak in peaks:
-                        g_energy_vs_th[bar, l, vov, peak].SetPoint(g_energy_vs_th[bar, l, vov, peak].GetN(), thr, energyPeak[peak][0] )
-                        g_energy_vs_th[bar, l, vov, peak].SetPointError(g_energy_vs_th[bar, l, vov, peak].GetN()-1, 0, energyPeak[peak][1])
-                        
-                        g_energy_vs_vov[bar, l, thr, peak].SetPoint(g_energy_vs_vov[bar, l, thr, peak].GetN(), VovsEff[vov], energyPeak[peak][0] )
-                        g_energy_vs_vov[bar, l, thr, peak].SetPointError(g_energy_vs_vov[bar, l, thr, peak].GetN()-1, 0, energyPeak[peak][1] )
-                        
-                        if (thr == thRef):
-                           g_energy_vs_bar[l, vov, thr, peak].SetPoint(g_energy_vs_bar[l, vov, thr, peak].GetN(), bar, energyPeak[peak][0] )
-                           g_energy_vs_bar[l, vov, thr, peak].SetPointError(g_energy_vs_bar[l, vov, thr, peak].GetN()-1, 0, energyPeak[peak][1] )
+                        energyPeak[peak] = [h1_energy.GetFunction('fitFunc_%d'%peak).GetParameter(1), h1_energy.GetFunction('fitFunc_%d'%peak).GetParError(1)]
+                  elif ( source == 'Laser'):
+                     fitFunc = ROOT.TF1('fitFunc','gaus',0, 1000)
+                     h1_energy.Fit('fitFunc','QNRS+')
+                     h1_energy.Fit('fitFunc','QNS+','', fitFunc.GetParameter(1)-fitFunc.GetParameter(2), fitFunc.GetParameter(1)+fitFunc.GetParameter(2))
+                     for peak in peaks:
+                        energyPeak[peak] = [ fitFunc.GetParameter(1), fitFunc.GetParError(1)]
+                  elif ( source == 'TB'):
+                     #fitFunc = h1_energy.GetFunction('f_landau_bar%02d%s_Vov%.02f_vth1_%02d'%(bar, l, vov, thr))
+                     #if (fitFunc==None): continue
+                     fitFunc = ROOT.TF1('f_landau_bar%02d%s_Vov%.02f_vth1_%02d'%(bar, l, vov, thr), '[0]*TMath::Landau(x,[1],[2])', 0,1000.)
+                     h1_energy.GetXaxis().SetRangeUser(50,800)
+                     emax = h1_energy.GetBinCenter(h1_energy.GetMaximumBin())
+                     fitFunc.SetParameters(10, emax, 30)
+                     fitFunc.SetRange(0.8*emax, 1.5*emax)
+                     h1_energy.Fit(fitFunc,'QR')
+                     #print l, bar, vov, thr, emax, fitFunc.GetParameter(1), fitFunc.GetParError(1)
+                     for peak in peaks:
+                        energyPeak[peak] = [fitFunc.GetParameter(1), fitFunc.GetParError(1)] 
+                                 
+ 
+                  for peak in peaks:
+                     g_energy_vs_th[bar, l, vov, peak].SetPoint(g_energy_vs_th[bar, l, vov, peak].GetN(), thr, energyPeak[peak][0] )
+                     g_energy_vs_th[bar, l, vov, peak].SetPointError(g_energy_vs_th[bar, l, vov, peak].GetN()-1, 0, energyPeak[peak][1])
+                     
+                     g_energy_vs_vov[bar, l, thr, peak].SetPoint(g_energy_vs_vov[bar, l, thr, peak].GetN(), VovsEff[vov], energyPeak[peak][0] )
+                     g_energy_vs_vov[bar, l, thr, peak].SetPointError(g_energy_vs_vov[bar, l, thr, peak].GetN()-1, 0, energyPeak[peak][1] )
+                     
+                     if (thr == thRef):
+                        g_energy_vs_bar[l, vov, thr, peak].SetPoint(g_energy_vs_bar[l, vov, thr, peak].GetN(), bar, energyPeak[peak][0] )
+                        g_energy_vs_bar[l, vov, thr, peak].SetPointError(g_energy_vs_bar[l, vov, thr, peak].GetN()-1, 0, energyPeak[peak][1] )
                         
    # -- tRes vs Vov, thr, bar
    bestRes_totCorr = {}
