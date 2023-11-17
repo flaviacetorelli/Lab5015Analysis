@@ -1756,7 +1756,7 @@ int main(int argc, char** argv)
 	  
 	  // --- positon corrections
 	  if (!useTrackInfo) continue;
-	  
+	  if (anEvent->nhits < 0 && anEvent->x<-100) continue;
 	  
 	  // --- energy ratio + phase + positon corrections
 	  if( !fitFunc_energyRatioCorr[index2] )	continue;
