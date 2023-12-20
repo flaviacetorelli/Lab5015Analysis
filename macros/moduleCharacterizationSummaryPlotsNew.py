@@ -17,7 +17,7 @@ parser.add_argument("-t",  "--versionTOFHIR", required=True, type=str, help="tof
 parser.add_argument("-m",  "--resMode",       required=True, type=int, help="resolution mode: 2 - tDiff, 1 - tAve")
 parser.add_argument("-o",  "--outFolder",     required=True, type=str, help="out folder")
 args = parser.parse_args()
-#  python moduleCharacterizationSummaryPlotsNew.py -m 2 -i HPK_nonIrr_C25_LYSO813_deg52_debug_Vov3.50_T5C -o HPK_nonIrr_C25_LYSO818_deg52_debug_Vov3.50_T5C -t TOFHIR2C
+#  python moduleCharacterizationSummaryPlotsNew.py -c posPhaseCorr,totRatioPhaseCorr -m 2 -i HPK_nonIrr_C25_LYSO813_deg52_debug_Vov3.50_T5C -o HPK_nonIrr_C25_LYSO818_deg52_debug_Vov3.50_T5C -t TOFHIR2C
 
 import ROOT
 import CMS_lumi, tdrstyle
@@ -85,8 +85,8 @@ source = 'TB'
 outdir  = '/eos/user/f/fcetorel/www/MTD/TBSept23/TOFHIR2C/ModuleCharacterization/onlyPosCorr/'
 outdir=outdir+args.outFolder
 outFileName = inputdir+'/summaryPlotsNew_'+args.outFolder+'.root'
-print 'Saving root file ', outFileName
-print 'Saving plots in ', outdir
+print ('Saving root file ', outFileName)
+print ('Saving plots in ', outdir)
 outfile = ROOT.TFile(outFileName, 'RECREATE' )
 
 
@@ -100,11 +100,11 @@ vovMax = 4.0
 
 # create files list
 label_list = (args.inputLabels.split(','))
-print label_list
+print (label_list)
 
 # corrections
 corrections = (args.corrections.split(','))
-print corrections
+print (corrections)
 
 # resolution mode : 0 : /1;  1: /sqrt(2) if CTR, 2: /2 if TDiff
 kscale = 2.
@@ -134,8 +134,8 @@ if (source == 'TB'):
 cols = { 0.50 : 51,
          0.60 : 51+8,
          0.80 : 51+16,
-         1.00 : 51+24,
-         1.25 : 51+32,
+         1.00 : 51+20,
+         1.25 : 51+32, #32
          1.50 : 51+40,
          2.00 : 51+44,
          2.50 : 51+46,
@@ -146,14 +146,14 @@ cols = { 0.50 : 51,
 # --- markers
 markers = {
 'totRatioPhaseCorr' : 20,
-'energyRatioPhaseCorr' : 21,
+'energyRatioPhaseCorr' : 24,
 'totRatioCorr' : 26,
 'energyRatioCorr' : 27,
 'energyRatioCorr_totRatioCorr_phaseCorr' : 34,  
 'posCorr' : 26,
-'posPhaseCorr' : 22,
-'totRatioPhasePosCorr' : 33,
-'energyRatioPhasePosCorr' : 47,
+'posPhaseCorr' : 21,
+'totRatioPhasePosCorr' : 22,
+'energyRatioPhasePosCorr' : 23,
 }
 
 
@@ -216,16 +216,20 @@ elif ('813' in args.outFolder):
  
         if (args.versionTOFHIR=='TOFHIR2C'):
             if ('WC' in args.outFolder):
-                goodBars[3.50] = [8,9,10,11,12,13]
-                goodBars[2.00] = [8,9,10,11,12,13]
-                goodBars[1.50] = [8,9,10,11,12,13]
-                goodBars[1.25] = [8,9,10,11,12,13]
-                goodBars[1.00] = [8,9,10,11,12,13]
+                goodBars[3.50] = [8,9,10,11,12] #bars excluded mostly for posphase corr having poor stats
+                goodBars[2.00] = [8,9,10,11,12]
+                goodBars[1.50] = [8,9,10,11,12]
+                goodBars[1.25] = [8,9,10,11,12]
+                goodBars[1.00] = [8,9,10,11,12]
 
-            elif ('ref0' in args.outFolder):
-                goodBars[vov] = [6,7,8,9,10,11,12,13]
             else:
-                goodBars[vov] = bars
+                goodBars[3.50] = [8,9,10,11,12,13]
+                goodBars[2.00] = [5,6,7,8,9,10,11,12,13,14] #golden are from 6  to 13
+                goodBars[1.50] = [5,6,7,8,9,10,11,12,13,14] #golden are from 6  to 13
+                goodBars[1.25] = [5,6,7,8,9,10,11,12,13,14] #golden are from 6  to 13
+                goodBars[1.00] = [5,6,7,8,9,10,11,12,13,14] #golden are from 6  to 13
+
+               
         else:
             goodBars[3.50] = [0,1,2,3,4,5,7,8,9,10,11,12,13]
             goodBars[2.00] = [0,1,2,3,4,5,7,8,9,10,11,12,13]
@@ -236,29 +240,40 @@ elif ('813' in args.outFolder):
             goodBars[0.60] = [0,2,3,4,5,7,8,9,10,11,12,13]
             goodBars[0.50] = [0,2,3,4,5,7,8,9,10,11,12,13]
 
+#elif ('813' in args.outFolder):
+#    plots_label = 'HPK (25 #mum, type2) + LYSO813 (prod1, type2)'
+#    for vov in Vovs:
+#        VovsEff[vov] = vov 
+#        goodBars[vov] = bars
+
 elif ('818' in args.outFolder):
     plots_label = 'HPK (25 #mum, type1) + LYSO818 (prod1, type1)'
     for vov in Vovs:
         VovsEff[vov] = vov 
-        if (args.versionTOFHIR=='TOFHIR2C'):
-            if ('WC' in args.outFolder):
-                goodBars[2.00] = [0,1,2,3,4,5,7,8,9,10,11,12,13]
-                goodBars[1.50] = [0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15]
-                goodBars[1.25] = [0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15]
-                goodBars[1.00] = [0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15]
-                goodBars[vov] = [8,9,10,11,12]
-            elif ('ref0' in args.outFolder):
-                goodBars[vov] = [8,9,10,11,12]
-            else:
-                print('bella raga')
-                goodBars[vov] = bars
-        else:
-           goodBars[3.50] = [0,1,2,3,4,5,6,7,8,9,10,11,12,13]
-           goodBars[2.00] = [0,1,2,3,4,5,7,8,9,10,11,12,13]
-           goodBars[1.50] = [0,1,2,3,4,5,7,8,9,10,11,12,13]
-           goodBars[1.00] = [0,1,2,3,4,5,7,8,9,10,11,12,13]
-           goodBars[0.80] = [0,1,2,3,4,5,7,8,9,10,11,12,13]
-           goodBars[0.50] = [0,2,3,4,5,7,8,9,10,11,12,13]
+        goodBars[vov] = bars
+
+#elif ('818' in args.outFolder):
+#    plots_label = 'HPK (25 #mum, type1) + LYSO818 (prod1, type1)'
+#    for vov in Vovs:
+#        VovsEff[vov] = vov 
+#        if (args.versionTOFHIR=='TOFHIR2C'):
+#            if ('WC' in args.outFolder):
+#                goodBars[2.00] = [0,1,2,3,4,5,7,8,9,10,11,12,13]
+#                goodBars[1.50] = [0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15]
+#                goodBars[1.25] = [0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15]
+#                goodBars[1.00] = [0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15]
+#                goodBars[vov] = [8,9,10,11,12]
+#            elif ('ref0' in args.outFolder):
+#                goodBars[vov] = [8,9,10,11,12]
+#            else:
+#                goodBars[vov] = bars
+#        else:
+#           goodBars[3.50] = [0,1,2,3,4,5,6,7,8,9,10,11,12,13]
+#           goodBars[2.00] = [0,1,2,3,4,5,7,8,9,10,11,12,13]
+#           goodBars[1.50] = [0,1,2,3,4,5,7,8,9,10,11,12,13]
+#           goodBars[1.00] = [0,1,2,3,4,5,7,8,9,10,11,12,13]
+#           goodBars[0.80] = [0,1,2,3,4,5,7,8,9,10,11,12,13]
+#           goodBars[0.50] = [0,2,3,4,5,7,8,9,10,11,12,13]
 
 elif ('528' in args.outFolder):
    plots_label = 'HPK (15#mum) + LYSO528 (prod5, type2)'
@@ -582,10 +597,10 @@ else:
       VovsEff[vov] = vov
       goodBars[vov] = bars 
 
-print 'bars:', bars
-print 'good bars:', goodBars
-print 'Vovs:',Vovs
-print 'thresholds:', thresholds
+print ('bars:', bars)
+print ('good bars:', goodBars)
+print ('Vovs:',Vovs)
+print ('thresholds:', thresholds)
 
 g_deltaT_bestTh_vs_vov = {}
 g_deltaT_bestTh_vs_bar = {}
@@ -645,7 +660,7 @@ for corr in corrections:
 
 # --- Read the histograms from moduleCharacterization_step2 file
 for label in label_list:
-   print label
+   print (label)
    inputFile == None
    inputFile = ROOT.TFile.Open(inputdir+'/moduleCharacterization_step2_%s.root'%label)
 
@@ -725,22 +740,19 @@ for label in label_list:
    for corr in corrections:   
       for bar in bars:
          for vov in Vovs:
-            print (vov, bar, goodBars[vov])
+            #print (vov, bar, goodBars[vov])
             if (bar not in goodBars[vov]): continue
             
-            print (vov, bar, goodBars[vov])
+            #print (vov, bar, goodBars[vov])
             for thr in thresholds: 
                tRes = {}
                for enBin in enBins:
                   h1_deltaT  = inputFile.Get('h1_deltaT_%s_bar%02dL-R_Vov%.02f_th%02d_energyBin%02d'%(corr, bar, vov, thr, enBin))
-                  print 'h1_deltaT_%s_bar%02dL-R_Vov%.02f_th%02d_energyBin%02d'%(corr, bar, vov, thr, enBin)
+                  #print ('h1_deltaT_%s_bar%02dL-R_Vov%.02f_th%02d_energyBin%02d'%(corr, bar, vov, thr, enBin))
                   # totRatio + phase corr
                   if (h1_deltaT == None): continue
                   if (h1_deltaT.GetEntries() < 150 ): continue
                   tRes[corr , enBin] = getTimeResolution(h1_deltaT)
-                  print ('is NOT NONE') 
-                  print corr, vov, enBin, getTimeResolution(h1_deltaT)[0]
-                  print tRes[corr ,  enBin]
                   if ( tRes[corr, enBin][0] < bestRes[corr, bar, vov, enBin][0]):
                      bestRes[corr, bar, vov, enBin] = tRes[corr,  enBin]
                   ctemp = ROOT.TCanvas()
@@ -772,7 +784,7 @@ for label in label_list:
                   g_deltaT_bestTh_vs_vov[corr, bar, enBin].SetPointError(g_deltaT_bestTh_vs_vov[corr, bar, enBin].GetN()-1, 0, (bestRes[corr, bar, vov, enBin][1])/kscale)
               # -- tRes  vs bar at the best threshold
                if (bestRes[corr, bar, vov, enBin][0]!= 9999):
-                  print (corr, vov, enBin, bar, g_deltaT_bestTh_vs_bar[corr, vov, enBin].GetN(), (bestRes[corr, bar, vov, enBin][0])/kscale) 
+                  #print (corr, vov, enBin, bar, g_deltaT_bestTh_vs_bar[corr, vov, enBin].GetN(), (bestRes[corr, bar, vov, enBin][0])/kscale) 
                   g_deltaT_bestTh_vs_bar[corr, vov, enBin].SetPoint(g_deltaT_bestTh_vs_bar[corr, vov, enBin].GetN(), bar, (bestRes[corr, bar, vov, enBin][0])/kscale )
                   g_deltaT_bestTh_vs_bar[corr, vov, enBin].SetPointError(g_deltaT_bestTh_vs_bar[corr, vov, enBin].GetN()-1, 0, (bestRes[corr, bar, vov, enBin][1])/kscale)            
    
@@ -1075,11 +1087,11 @@ for corr in corrections:
         g_deltaT_bestTh_vs_bar[corr, vov, enBin].Draw('psame')
         fitRes = ROOT.TF1('fitRes','pol0',0,16)
         g_deltaT_bestTh_vs_bar[corr, vov, enBin].Fit(fitRes,'QRN')
-        print corr, vov
-        print g_deltaT_bestTh_vs_bar[corr, vov, enBin].GetN()
-        print g_deltaT_bestTh_vs_bar[corr, vov, enBin].GetMean(2)
+        #print (corr, vov)
+        #print (g_deltaT_bestTh_vs_bar[corr, vov, enBin].GetN())
+        #print (g_deltaT_bestTh_vs_bar[corr, vov, enBin].GetMean(2))
        
-        print '%s ===> Vov = %0.02f --> Average tRes = %.01f, spread (RMS) of tRes = %.01f %%'%(corr, vov, fitRes.GetParameter(0), 100*g_deltaT_bestTh_vs_bar[corr, vov, enBin].GetRMS(2)/g_deltaT_bestTh_vs_bar[corr, vov, enBin].GetMean(2))
+        print ('%s ===> Vov = %0.02f --> Average tRes = %.01f, spread (RMS) of tRes = %.01f %%'%(corr, vov, fitRes.GetParameter(0), 100*g_deltaT_bestTh_vs_bar[corr, vov, enBin].GetRMS(2)/g_deltaT_bestTh_vs_bar[corr, vov, enBin].GetMean(2)))
         leg.AddEntry(g_deltaT_bestTh_vs_bar[corr, vov, enBin], 'V_{OV}^{eff} = %.02f V'%VovsEff[vov], 'PL')
         outfile.cd()
         g_deltaT_bestTh_vs_bar[corr, vov, enBin].Write('g_deltaT_%s_bestTh_vs_bar_Vov%.02f_enBin%02d'%(corr, vov, enBin))
