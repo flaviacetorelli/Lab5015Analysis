@@ -134,10 +134,34 @@ elif comparison == 'vendor': # 214 --> 2E14
 
 g = {}
 f = {}
+for ALDO in ['A', 'B']:
+    for key,gname in gnames.items():
+        f[key] = ROOT.TFile.Open(fnames[key])
+        g[gname+ALDO] = f[key].Get(gname +ALDO)
+
+
+# averaging
+# Using eval function since aldo A and aldo B do not have exact same number of points along x.
+for key, gname in gnames.items(): 
+    gA = g[gname+'A'] 
+    gB = g[gname+'B']
+    g[gname+'Ave'] = ROOT.TGraph()
+    endrange = gA.GetPointX(gA.GetMaxSize()-1) #choose the common range between aldo A and B to have meaningful evaluate
+    if  gB.GetPointX(gB.GetMaxSize()-1) < gA.GetPointX(gA.GetMaxSize()-1) : endrange = gB.GetPointX(gB.GetMaxSize()-1)
+
+    #print (gname,'gA max X = ',  gA.GetPointX(gA.GetMaxSize()-1) , 'gB max X = ', gB.GetPointX(gB.GetMaxSize()-1))
+    #print ('endrange  ', endrange)
+    npoints = 50 #choose number of points to eval your average
+    x0 = 0
+    deltax = (endrange - x0) / npoints
+    for i in range(0, npoints): #omitting npoints+1 to be completely sure to be in the common range between the two 
+        x = i*deltax + x0
+        g[gname+'Ave'].SetPoint( g[gname+'Ave'].GetN(), x, (gA.Eval(x) +   gB.Eval(x)) / 2 )
+        #print (gname, x ,  gA.Eval(x) ,   gB.Eval(x) ,  (gA.Eval(x) +   gB.Eval(x)) / 2)
+
 
 # plot
-        
-for ALDO in ['A','B']:
+for ALDO in ['A','B', 'Ave']:
 
     leg = ROOT.TLegend(0.20, yminleg, 0.50, 0.89) #aligned on the left
     if comparison == 'irradiation': leg = ROOT.TLegend(0.50, yminleg, 0.89, 0.89)  #aligned on the right
@@ -159,15 +183,18 @@ for ALDO in ['A','B']:
     ROOT.gPad.SetTicks(1)
 
     for key,gname in gnames.items():
-        f[key] = ROOT.TFile.Open(fnames[key])
-        g[key] = f[key].Get(gname +ALDO)
-        g[key].SetMarkerStyle(plotAttrs[key][0])
-        g[key].SetMarkerColor(plotAttrs[key][1])
-        g[key].SetMarkerSize(1.15)
-        g[key].SetLineColor(plotAttrs[key][1])
-        g[key].SetLineWidth(1)
-        g[key].Draw("pl same")
-        leg.AddEntry(g[key], '%s'%plotAttrs[key][2],'PL')
+        #print(g[gname+ALDO].GetN())
+        g[gname+ALDO].SetMarkerStyle(plotAttrs[key][0])
+        g[gname+ALDO].SetMarkerColor(plotAttrs[key][1])
+        g[gname+ALDO].SetMarkerSize(1.15)
+        g[gname+ALDO].SetLineColor(plotAttrs[key][1])
+        g[gname+ALDO].SetLineWidth(1)
+
+        if (comparison == 'irradiation' and ALDO == 'Ave' and key == 114):
+            #print (gname, "So I am correctly in the if")
+            g[gname+'A'].Draw("pl same") #here ALDO B has too small range, so plotting ALDO A instead of average
+        else: g[gname+ALDO].Draw("pl same")
+        leg.AddEntry(g[gname+ALDO], '%s'%plotAttrs[key][2],'PL')
     leg.Draw()
     
     tl2 = ROOT.TLatex()
@@ -189,5 +216,56 @@ for ALDO in ['A','B']:
     c.SaveAs(outdir+'%s.pdf'%c.GetName())
     c.SaveAs(outdir+'%s.C'%c.GetName())
 
+#compare A/B/Ave to check average curve is meaningfull
+for key,gname in gnames.items():
+    
+    leg = ROOT.TLegend(0.20, yminleg, 0.50, 0.89) #aligned on the left
+    if comparison == 'irradiation': leg = ROOT.TLegend(0.50, yminleg, 0.89, 0.89)  #aligned on the right
+    leg.SetBorderSize(0)
+    leg.SetFillStyle(0)
+    leg.SetTextFont(42)
+    leg.SetTextSize(0.045) 
+    
+    c = ROOT.TCanvas('c_%s'%(gname),'c_%s'%(gname), 600, 500)
+    if IVorDCR == 'IVEff_ch': 
+        ypad = ypadIV
+        hPad = ROOT.gPad.DrawFrame(0.,0.,xpad -0.8 ,ypad)
+        hPad.SetTitle(";V_{OV} [V]; I [#muA]")
+    else: 
+        ypad = ypadDCR
+        hPad = ROOT.gPad.DrawFrame(0.,0.,xpad-0.8 ,ypad)
+        hPad.SetTitle(";V_{OV} [V]; DCR [GHz]")
+    hPad.Draw()
+    ROOT.gPad.SetTicks(1)
+
+    for i,ALDO in enumerate(['A', 'B', 'Ave']):
+        #print(g[gname+ALDO].GetN())
+        g[gname+ALDO].SetMarkerStyle(plotAttrs[key][0]+i)
+        g[gname+ALDO].SetMarkerColor(plotAttrs[key][1]+3*i)
+        g[gname+ALDO].SetMarkerSize(1.15)
+        g[gname+ALDO].SetLineColor(plotAttrs[key][1]+3*i)
+        g[gname+ALDO].SetLineWidth(1)
+        g[gname+ALDO].Draw("pl same")
+        leg.AddEntry(g[gname+ALDO], plotAttrs[key][2]+' '+ALDO,'PL')
+    leg.Draw()
+    
+    tl2 = ROOT.TLatex()
+    tl2.SetNDC()
+    tl2.SetTextFont(42)
+    tl2.SetTextSize(0.045)
+    tl2.DrawLatex(0.20,0.20,SiPM)
+    
+    tl = ROOT.TLatex()
+    tl.SetNDC()
+    tl.SetTextFont(42)
+    tl.SetTextSize(0.045)
+    tl.DrawLatex(0.58,0.20,irradiation)
+    
+    cms_logo = draw_logo()
+    cms_logo.Draw()
+    
+    c.SaveAs(outdir+'%s.png'%c.GetName())
+    c.SaveAs(outdir+'%s.pdf'%c.GetName())
+    c.SaveAs(outdir+'%s.C'%c.GetName())
 
 
