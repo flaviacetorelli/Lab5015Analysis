@@ -36,7 +36,7 @@ parser.add_argument("--comparison",   required=True, type=str, help="Type of com
 parser.add_argument("--IVorDCR",       required=True, type=str, help="Choose IVEff_ch or DCR")
 parser.add_argument("--outFolder", required=True, type=str, help="out folder: choose an existing ones")
 args = parser.parse_args()
-#usage: python3 plot_IVcurve.py --outFolder /eos/user/f/fcetorel/www/MTD/plot4BTLpaper/IVcurve/test/ --comparison irradiation --IVorDCR IVEff_ch
+#usage: python3 plot_IVcurve.py --outFolder /eos/user/f/fcetorel/www/MTD/plot4BTLpaper/IVcurve/btlpaper_110424/ --comparison irradiation --IVorDCR IVEff_ch
 #outdir = '/eos/user/f/fcetorel/www/MTD/plot4BTLpaper/IVcurve/test/'
 outdir = args.outFolder
 comparison = args.comparison
@@ -47,14 +47,15 @@ gnames = {}
 labels = {}
 
 irradiation = ''
-SiPM = 'HPK'
+SiPM = ''
 
 if (comparison == 'cellsize'):  # USE FILES FROM MIA
+    xminleg = 0.72
     yminleg = 0.6
-    fnames = { 30 : '/afs/cern.ch/work/f/fcetorel/private/work2/TBMay2023/Lab5015Analysis/plots/TOFHIR2C/IVcurve_240310/logIVEff_TOFHIR2C_T2_size.root',
-               25 : '/afs/cern.ch/work/f/fcetorel/private/work2/TBMay2023/Lab5015Analysis/plots/TOFHIR2C/IVcurve_240310/logIVEff_TOFHIR2C_T2_size.root',
-               20 : '/afs/cern.ch/work/f/fcetorel/private/work2/TBMay2023/Lab5015Analysis/plots/TOFHIR2C/IVcurve_240310/logIVEff_TOFHIR2C_T2_size.root',
-               15 : '/afs/cern.ch/work/f/fcetorel/private/work2/TBMay2023/Lab5015Analysis/plots/TOFHIR2C/IVcurve_240310/logIVEff_TOFHIR2C_T2_size.root'}
+    fnames = { 30 : '/eos/cms/store/group/dpg_mtd/comm_mtd/TB/MTDTB_H8_Sep2023/ANALYSIS/TOFHIR2C/IVcurve_240310/logIVEff_TOFHIR2C_T2_size.root',
+               25 : '/eos/cms/store/group/dpg_mtd/comm_mtd/TB/MTDTB_H8_Sep2023/ANALYSIS/TOFHIR2C/IVcurve_240310/logIVEff_TOFHIR2C_T2_size.root',
+               20 : '/eos/cms/store/group/dpg_mtd/comm_mtd/TB/MTDTB_H8_Sep2023/ANALYSIS/TOFHIR2C/IVcurve_240310/logIVEff_TOFHIR2C_T2_size.root',
+               15 : '/eos/cms/store/group/dpg_mtd/comm_mtd/TB/MTDTB_H8_Sep2023/ANALYSIS/TOFHIR2C/IVcurve_240310/logIVEff_TOFHIR2C_T2_size.root'}
 
     gnames = { 30 : 'g_%s_conf54.01_ASIC2_ALDO'%IVorDCR,
                25 : 'g_%s_conf52.00_ASIC2_ALDO'%IVorDCR,
@@ -73,22 +74,29 @@ if (comparison == 'cellsize'):  # USE FILES FROM MIA
                   20 : [21, ROOT.kBlue,     '20 #mum'],
                   15 : [22, ROOT.kRed,      '15 #mum']
                 }
+    SiPM = 'HPK'
     irradiation = '2 #times 10^{14} 1 MeV n_{eq}/cm^{2}'
     ypadIV = 3000 
     ypadDCR = 80
     xpad = 2.5
 
 elif comparison == 'irradiation': # 214 --> 2E14
-
+    xminleg =  0.52
     yminleg =  0.69
-    fnames = { 214 : '/afs/cern.ch/work/f/fcetorel/private/work2/TBMay2023/Lab5015Analysis/plots/TOFHIR2C/IVcurve_240310/logIVEff_TOFHIR2C_T1_irradiation.root',
-               114 : '/afs/cern.ch/work/f/fcetorel/private/work2/TBMay2023/Lab5015Analysis/plots/TOFHIR2C/IVcurve_240310/logIVEff_TOFHIR2C_T1_irradiation.root',
-               113 : '/afs/cern.ch/work/f/fcetorel/private/work2/TBMay2023/Lab5015Analysis/plots/TOFHIR2C/IVcurve_240310/logIVEff_TOFHIR2C_T1_irradiation.root'
+
+    scaleFact = {
+              214 : 1,
+              114 : pow(1.9, -3. / 10.), # to scale as 1.9 ^ (deltaT / 10)
+              113 : pow(1.9, -3. / 10.)
+              }
+    fnames = { 214 : '/eos/cms/store/group/dpg_mtd/comm_mtd/TB/MTDTB_H8_Sep2023/ANALYSIS/TOFHIR2C/IVcurve_240310/logIVEff_TOFHIR2C_T1_irradiation.root',
+               114 : '/eos/cms/store/group/dpg_mtd/comm_mtd/TB/MTDTB_H8_Sep2023/ANALYSIS/TOFHIR2C/IVcurve_240310/logIVEff_TOFHIR2C_T1_irradiation.root',
+               113 : '/eos/cms/store/group/dpg_mtd/comm_mtd/TB/MTDTB_H8_Sep2023/ANALYSIS/TOFHIR2C/IVcurve_240310/logIVEff_TOFHIR2C_T1_irradiation.root'
              }
 
-    gnames = { 214 : 'g_%s_conf51.04_ASIC2_ALDO'%IVorDCR, # T = -35 C # to be scaled for 3 C
-               114 : 'g_%s_conf56.00_ASIC2_ALDO'%IVorDCR, # T = -32 C
-               113 : 'g_%s_conf28.01_ASIC2_ALDO'%IVorDCR, # T = -32 C
+    gnames = { 214 : 'g_%s_conf51.04_ASIC2_ALDO'%IVorDCR, # T = -35 C
+               114 : 'g_%s_conf56.00_ASIC2_ALDO'%IVorDCR, # T = -32 C # to be scaled for 3 C
+               113 : 'g_%s_conf28.01_ASIC2_ALDO'%IVorDCR, # T = -32 C # to be scaled for 3 C
               }
 
     labels = { 214 : 'HPK 25 μm T1 2E+14',
@@ -96,19 +104,20 @@ elif comparison == 'irradiation': # 214 --> 2E14
                113 : 'HPK 25 um T1 1E+13',
               }
     
-    plotAttrs = { 214 : [23, ROOT.kOrange+1, '2 #times 10^{14} 1 MeV n_{eq}/cm^{2}'],
-                 114 : [20, ROOT.kGreen+2,  '1 #times 10^{14} 1 MeV n_{eq}/cm^{2}'],
-                 113 : [21, ROOT.kBlue,     '1 #times 10^{13} 1 MeV n_{eq}/cm^{2}'],
+    plotAttrs = { 214 : [23, ROOT.kGreen+4, '2 #times 10^{14} 1 MeV n_{eq}/cm^{2}'],
+                 114 : [20, ROOT.kGreen+3,  '1 #times 10^{14} 1 MeV n_{eq}/cm^{2}'],
+                 113 : [21, ROOT.kGreen-6,     '1 #times 10^{13} 1 MeV n_{eq}/cm^{2}'],
                 }
     ypadIV = 4000 
     ypadDCR = 50
     xpad = 4.5
+    SiPM = 'HPK 25 #mum'
 
 elif comparison == 'vendor': # 214 --> 2E14
-
+    xminleg =  0.66
     yminleg =  0.69
-    fnames = { 'fbk' : '/afs/cern.ch/work/f/fcetorel/private/work2/TBMay2023/Lab5015Analysis/plots/TOFHIR2C/IVcurve_240310/logIVEff_TOFHIR2C_T2_vendors.root',
-               'hpk' : '/afs/cern.ch/work/f/fcetorel/private/work2/TBMay2023/Lab5015Analysis/plots/TOFHIR2C/IVcurve_240310/logIVEff_TOFHIR2C_T2_vendors.root',
+    fnames = { 'fbk' : '/eos/cms/store/group/dpg_mtd/comm_mtd/TB/MTDTB_H8_Sep2023/ANALYSIS/TOFHIR2C/IVcurve_240310/logIVEff_TOFHIR2C_T2_vendors.root',
+               'hpk' : '/eos/cms/store/group/dpg_mtd/comm_mtd/TB/MTDTB_H8_Sep2023/ANALYSIS/TOFHIR2C/IVcurve_240310/logIVEff_TOFHIR2C_T2_vendors.root',
              }
 
     gnames = { 'fbk' : 'g_%s_conf73.00_ASIC2_ALDO'%IVorDCR, 
@@ -116,11 +125,11 @@ elif comparison == 'vendor': # 214 --> 2E14
               }
 
     labels = { 'fbk' : 'FBK 25 μm T2 2E+14',
-               'hpk' : 'HPK 25 μm T2 1E+14',
+               'hpk' : 'HPK 25 μm T2 2E+14',
               }
     
-    plotAttrs = { 'fbk' : [23, ROOT.kOrange+1, 'FBK'],
-                  'hpk' : [20, ROOT.kGreen+2,  'HPK'],
+    plotAttrs = { 'fbk' : [23, ROOT.kAzure+7, 'FBK 25 #mum'],
+                  'hpk' : [20, ROOT.kGreen+2,  'HPK 25 #mum'],
                 }
  
     irradiation = '2 #times 10^{14} 1 MeV n_{eq}/cm^{2}'
@@ -156,15 +165,23 @@ for key, gname in gnames.items():
     deltax = (endrange - x0) / npoints
     for i in range(0, npoints): #omitting npoints+1 to be completely sure to be in the common range between the two 
         x = i*deltax + x0
+
+        if (comparison == 'irradiation'  and key == 214 and (x > 0.51 and x < 0.535) ): continue #omit some no good points
+            #x = 0.5
+            #g[gname+'Ave'].SetPoint( g[gname+'Ave'].GetN(), x, (gA.Eval(x) +   gB.Eval(x)) / 2 )
         g[gname+'Ave'].SetPoint( g[gname+'Ave'].GetN(), x, (gA.Eval(x) +   gB.Eval(x)) / 2 )
+        
         #print (gname, x ,  gA.Eval(x) ,   gB.Eval(x) ,  (gA.Eval(x) +   gB.Eval(x)) / 2)
+        #print (gname, x , (gA.Eval(x) +   gB.Eval(x)) / 2)
 
 
 # plot
 for ALDO in ['A','B', 'Ave']:
 
-    leg = ROOT.TLegend(0.20, yminleg, 0.50, 0.89) #aligned on the left
-    if comparison == 'irradiation': leg = ROOT.TLegend(0.50, yminleg, 0.89, 0.89)  #aligned on the right
+    #leg = ROOT.TLegend(0.20, yminleg, 0.50, 0.89) #aligned on the left
+    #if comparison == 'irradiation': leg = ROOT.TLegend(0.50, yminleg, 0.89, 0.89)  #aligned on the right
+    leg = ROOT.TLegend(xminleg, yminleg, 0.86, 0.89)  #aligned on the right
+    #leg.SetTextAlign(32)
     leg.SetBorderSize(0)
     leg.SetFillStyle(0)
     leg.SetTextFont(42)
@@ -190,9 +207,11 @@ for ALDO in ['A','B', 'Ave']:
         g[gname+ALDO].SetLineColor(plotAttrs[key][1])
         g[gname+ALDO].SetLineWidth(1)
 
+        if comparison == 'irradiation': # scale the 1E14, 1E13 to -35 C
+             g[gname+ALDO].Scale(scaleFact[key], "y")
         if (comparison == 'irradiation' and ALDO == 'Ave' and key == 114):
-            #print (gname, "So I am correctly in the if")
             g[gname+'A'].Draw("pl same") #here ALDO B has too small range, so plotting ALDO A instead of average
+
         else: g[gname+ALDO].Draw("pl same")
         leg.AddEntry(g[gname+ALDO], '%s'%plotAttrs[key][2],'PL')
     leg.Draw()
@@ -201,8 +220,10 @@ for ALDO in ['A','B', 'Ave']:
     tl2.SetNDC()
     tl2.SetTextFont(42)
     tl2.SetTextSize(0.045)
-    tl2.DrawLatex(0.20,0.20,SiPM)
-    
+    tl2.DrawLatex(0.20,0.85,SiPM)
+    #if comparison == 'irradiation': tl2.DrawLatex(0.20,0.85,SiPM)
+    #else: tl2.DrawLatex(0.20,0.20,SiPM)
+
     tl = ROOT.TLatex()
     tl.SetNDC()
     tl.SetTextFont(42)
@@ -219,8 +240,9 @@ for ALDO in ['A','B', 'Ave']:
 #compare A/B/Ave to check average curve is meaningfull
 for key,gname in gnames.items():
     
-    leg = ROOT.TLegend(0.20, yminleg, 0.50, 0.89) #aligned on the left
-    if comparison == 'irradiation': leg = ROOT.TLegend(0.50, yminleg, 0.89, 0.89)  #aligned on the right
+    #leg = ROOT.TLegend(0.20, yminleg, 0.50, 0.89) #aligned on the left
+    #if comparison == 'irradiation': leg = ROOT.TLegend(0.50, yminleg, 0.89, 0.89)  #aligned on the right
+    leg = ROOT.TLegend(xminleg, yminleg, 0.89, 0.88)  #aligned on the right
     leg.SetBorderSize(0)
     leg.SetFillStyle(0)
     leg.SetTextFont(42)
@@ -249,16 +271,10 @@ for key,gname in gnames.items():
         leg.AddEntry(g[gname+ALDO], plotAttrs[key][2]+' '+ALDO,'PL')
     leg.Draw()
     
-    tl2 = ROOT.TLatex()
-    tl2.SetNDC()
-    tl2.SetTextFont(42)
-    tl2.SetTextSize(0.045)
-    tl2.DrawLatex(0.20,0.20,SiPM)
+    #if comparison == 'irradiation': tl2.DrawLatex(0.20,0.85,SiPM)
+    #else: tl2.DrawLatex(0.20,0.20,SiPM)
+    tl2.DrawLatex(0.20,0.85,SiPM)
     
-    tl = ROOT.TLatex()
-    tl.SetNDC()
-    tl.SetTextFont(42)
-    tl.SetTextSize(0.045)
     tl.DrawLatex(0.58,0.20,irradiation)
     
     cms_logo = draw_logo()
