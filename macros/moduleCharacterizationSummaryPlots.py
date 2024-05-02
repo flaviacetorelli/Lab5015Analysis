@@ -78,16 +78,16 @@ def getTimeResolution(h1_deltaT):
 
 
 # INPUT
-inputdir = '/data1/cmsdaq/Lab5015Analysis_new/TB_CERN_June22/Lab5015Analysis/plots/'
+inputdir = '/afs/cern.ch/work/f/fcetorel/private/work2/TBMay2023/Lab5015Analysis/plots/TOFHIR2C/'
 #source = 'Laser'
 source = 'TB'
 
 
 # OUTPUT
-outdir  = '/var/www/html/TOFHIR2X/MTDTB_CERN_May23/ModuleCharacterization/'
+outdir  = '/eos/user/f/fcetorel/www/MTD/TBMay23/TOFHIR2C/ModuleCharacterization/'
 outdir=outdir+args.outFolder
 outFileName = outdir+'/summaryPlots_'+args.outFolder+'.root'
-print 'Saving plots in ', outdir
+print ('Saving plots in ', outdir)
 outfile = ROOT.TFile(outFileName, 'RECREATE' )
 
 
@@ -100,7 +100,7 @@ vovMax = 5.5
 
 # create files list
 label_list = (args.inputLabels.split(','))
-print label_list
+print (label_list)
 
 # resolution mode : 0 : /1;  1: /sqrt(2) if CTR, 2: /2 if TDiff
 kscale = 2.
@@ -226,9 +226,20 @@ elif ('813' in args.outFolder): #TOFHIR2C
     plots_label = 'HPK (25 #mum, type2) + LYSO813 (prod1, type2)'
     for vov in Vovs:
         VovsEff[vov] = vov 
-    goodBars[3.50] = [0,1,2,3,4,5,7,8,9,10,11,12,13]
+    goodBars[3.50] = [1,3,4,5,6,8,9,10,11,12,13,14,15] 
     goodBars[2.00] = [0,1,2,3,4,5,7,8,9,10,11,12,13]
     goodBars[1.50] = [0,1,2,3,4,5,7,8,9,10,11,12,13]
+    goodBars[1.00] = [0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15]
+    goodBars[0.80] = [0,1,2,3,4,5,7,8,9,10,11,12,13]
+    goodBars[0.50] = [0,2,3,4,5,7,8,9,10,11,12,13]
+
+elif ('815' in args.outFolder): #TOFHIR2C
+    plots_label = 'HPK (25 #mum, type2) + LYSO815 (prod1, type2)'
+    for vov in Vovs:
+        VovsEff[vov] = vov 
+    goodBars[3.50] = [0,1,2,3,4,5,7,8,9,10,11,12,13]
+    goodBars[2.00] = [1,2,4,5,6,7,8,9,10,11,12,13,14,15]
+    goodBars[1.50] = [1,2,4,5,6,7,9,10,11,12,13,14,15]
     goodBars[1.00] = [0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15]
     goodBars[0.80] = [0,1,2,3,4,5,7,8,9,10,11,12,13]
     goodBars[0.50] = [0,2,3,4,5,7,8,9,10,11,12,13]
@@ -249,13 +260,13 @@ else:
     for vov in Vovs:
         VovsEff[vov] = vov
         goodBars[vov] = bars 
-    print VovsEff
+    print (VovsEff)
 
 
-print 'bars:', bars
-print 'good bars:', goodBars
-print 'Vovs:',Vovs
-print 'thresholds:', thresholds
+print ('bars:', bars)
+print ('good bars:', goodBars)
+print ('Vovs:',Vovs)
+print ('thresholds:', thresholds)
 
 
 # --- Summary graphs
@@ -331,7 +342,7 @@ for vov in Vovs:
 
 # --- Read the histograms from moduleCharacterization_step2 file
 for label in label_list:
-   print label
+   print (label)
    inputFile == None
    inputFile = ROOT.TFile.Open(inputdir+'/moduleCharacterization_step2_%s.root'%label)
 
@@ -374,15 +385,15 @@ for label in label_list:
                      for peak in peaks:
                         energyPeak[peak] = [ fitFunc.GetParameter(1), fitFunc.GetParError(1)]
                   elif ( source == 'TB'):
-                     #fitFunc = h1_energy.GetFunction('f_landau_bar%02d%s_Vov%.02f_vth1_%02d'%(bar, l, vov, thr))
-                     #if (fitFunc==None): continue
-                     fitFunc = ROOT.TF1('f_landau_bar%02d%s_Vov%.02f_vth1_%02d'%(bar, l, vov, thr), '[0]*TMath::Landau(x,[1],[2])', 0,1000.)
-                     h1_energy.GetXaxis().SetRangeUser(50,800)
+                     fitFunc = h1_energy.GetFunction('f_landau_bar%02d%s_Vov%.02f_vth1_%02d'%(bar, l, vov, thr)) #reading values from step2
+                     if (fitFunc==None): continue
+                     #fitFunc = ROOT.TF1('f_landau_bar%02d%s_Vov%.02f_vth1_%02d'%(bar, l, vov, thr), '[0]*TMath::Landau(x,[1],[2])', 0,1000.)
+                     #h1_energy.GetXaxis().SetRangeUser(50,800)
                      emax = h1_energy.GetBinCenter(h1_energy.GetMaximumBin())
-                     fitFunc.SetParameters(10, emax, 30)
-                     fitFunc.SetRange(0.8*emax, 1.5*emax)
-                     h1_energy.Fit(fitFunc,'QR')
-                     #print l, bar, vov, thr, emax, fitFunc.GetParameter(1), fitFunc.GetParError(1)
+                     #fitFunc.SetParameters(10, emax, 30)
+                     #fitFunc.SetRange(0.8*emax, 1.5*emax)
+                     #h1_energy.Fit(fitFunc,'QR')
+                     #print (l, bar, vov, thr, emax, fitFunc.GetParameter(1), fitFunc.GetParError(1))
                      for peak in peaks:
                         energyPeak[peak] = [fitFunc.GetParameter(1), fitFunc.GetParError(1)] 
                                  
@@ -445,6 +456,8 @@ for label in label_list:
                tRes_totCorr[enBin] = getTimeResolution(h1_deltaT_totCorr)
                if ( tRes_totCorr[enBin][0] < bestRes_totCorr[bar, vov, enBin][0]):
                   #if ( ('1E14' in args.outFolder or  '2E14' in args.outFolder ) and VovsEff[vov] <= 1.50 and thr >= 13): continue
+                  #if ( ('HPK_2E14_C25_LYSO815_Vov1.50_T-30C' in args.outFolder )  and thr == 3): continue
+                  if ( ('HPK_2E14_C25_LYSO815_Vov1.50_T-35C' in args.outFolder )  and (bar == 9 or bar == 6) and thr == 3): continue
                   bestRes_totCorr[bar, vov, enBin] = tRes_totCorr[enBin]
                ctemp = ROOT.TCanvas()
                h1_deltaT_totCorr.GetYaxis().SetRangeUser(0, h1_deltaT_totCorr.GetBinContent(h1_deltaT_totCorr.GetMaximumBin())*1.2)                
@@ -812,14 +825,14 @@ for enBin in enBins:
       leg.SetNColumns(2);
       leg.SetColumnSeparation(0.2);
    for i, vov in enumerate(Vovs):
-      print g_deltaT_energyRatioCorr_bestTh_vs_bar[vov, enBin].GetN()
+      #print (g_deltaT_energyRatioCorr_bestTh_vs_bar[vov, enBin].GetN())
       g_deltaT_energyRatioCorr_bestTh_vs_bar[vov, enBin].SetMarkerStyle(24)
       g_deltaT_energyRatioCorr_bestTh_vs_bar[vov, enBin].SetMarkerColor(cols[vov])
       g_deltaT_energyRatioCorr_bestTh_vs_bar[vov, enBin].SetLineColor(cols[vov])
       g_deltaT_energyRatioCorr_bestTh_vs_bar[vov, enBin].Draw('psame')
       fitRes = ROOT.TF1('fitRes','pol0',0,16)
       g_deltaT_energyRatioCorr_bestTh_vs_bar[vov, enBin].Fit(fitRes,'QRN')
-      print 'energy Corr. ===> Vov = %0.02f --> Average tRes = %.01f, spread (RMS) of tRes = %.01f %%'%(vov, fitRes.GetParameter(0), 100*g_deltaT_energyRatioCorr_bestTh_vs_bar[vov, enBin].GetRMS(2)/g_deltaT_energyRatioCorr_bestTh_vs_bar[vov, enBin].GetMean(2))
+      print ('energy Corr. ===> Vov = %0.02f --> Average tRes = %.01f, spread (RMS) of tRes = %.01f %%'%(vov, fitRes.GetParameter(0), 100*g_deltaT_energyRatioCorr_bestTh_vs_bar[vov, enBin].GetRMS(2)/g_deltaT_energyRatioCorr_bestTh_vs_bar[vov, enBin].GetMean(2)))
       leg.AddEntry(g_deltaT_energyRatioCorr_bestTh_vs_bar[vov, enBin], 'V_{OV}^{eff} = %.02f V'%VovsEff[vov], 'PL')
       outfile.cd()
       g_deltaT_energyRatioCorr_bestTh_vs_bar[vov, enBin].Write('g_deltaT_energyRatioCorr_bestTh_vs_bar_Vov%.02f_enBin%02d'%(vov, enBin))
@@ -848,7 +861,7 @@ for enBin in enBins:
       g_deltaT_totRatioCorr_bestTh_vs_bar[vov, enBin].Draw('psame')
       fitRes = ROOT.TF1('fitRes','pol0',0,16)
       g_deltaT_totRatioCorr_bestTh_vs_bar[vov, enBin].Fit(fitRes,'QRN')
-      print 'Tot Corr     === >Vov = %0.02f --> Average tRes = %.01f, spread (RMS) of tRes = %.01f %%'%(vov, fitRes.GetParameter(0), 100*g_deltaT_totRatioCorr_bestTh_vs_bar[vov, enBin].GetRMS(2)/g_deltaT_totRatioCorr_bestTh_vs_bar[vov, enBin].GetMean(2))
+      print ('Tot Corr     === >Vov = %0.02f --> Average tRes = %.01f, spread (RMS) of tRes = %.01f %%'%(vov, fitRes.GetParameter(0), 100*g_deltaT_totRatioCorr_bestTh_vs_bar[vov, enBin].GetRMS(2)/g_deltaT_totRatioCorr_bestTh_vs_bar[vov, enBin].GetMean(2)))
       leg.AddEntry(g_deltaT_totRatioCorr_bestTh_vs_bar[vov, enBin], 'V_{OV}^{eff} = %.02f V'%VovsEff[vov], 'PL')
       outfile.cd()
       g_deltaT_totRatioCorr_bestTh_vs_bar[vov, enBin].Write('g_deltaT_totRatioCorr_bestTh_vs_bar_Vov%.02f_enBin%02d'%(vov, enBin))
@@ -878,7 +891,7 @@ for enBin in enBins:
       g_deltaT_energyRatioCorr_totRatioCorr_bestTh_vs_bar[vov, enBin].Draw('psame')
       fitRes = ROOT.TF1('fitRes','pol0',0,16)
       g_deltaT_energyRatioCorr_totRatioCorr_bestTh_vs_bar[vov, enBin].Fit(fitRes,'QRN')
-      print 'en.+Tot corr === Vov = %0.02f --> Average tRes = %.01f, spread (RMS) of tRes = %.01f %%'%(vov, fitRes.GetParameter(0), 100*g_deltaT_energyRatioCorr_totRatioCorr_bestTh_vs_bar[vov, enBin].GetRMS(2)/g_deltaT_energyRatioCorr_totRatioCorr_bestTh_vs_bar[vov, enBin].GetMean(2))
+      print ('en.+Tot corr === Vov = %0.02f --> Average tRes = %.01f, spread (RMS) of tRes = %.01f %%'%(vov, fitRes.GetParameter(0), 100*g_deltaT_energyRatioCorr_totRatioCorr_bestTh_vs_bar[vov, enBin].GetRMS(2)/g_deltaT_energyRatioCorr_totRatioCorr_bestTh_vs_bar[vov, enBin].GetMean(2)))
       leg.AddEntry(g_deltaT_energyRatioCorr_totRatioCorr_bestTh_vs_bar[vov, enBin], 'V_{OV}^{eff} = %.02f V'%VovsEff[vov], 'PL')
       outfile.cd()
       g_deltaT_energyRatioCorr_totRatioCorr_bestTh_vs_bar[vov, enBin].Write('g_deltaT_energyRatioCorr_totRatioCorr_bestTh_vs_bar_Vov%.02f_enBin%02d'%(vov, enBin))
