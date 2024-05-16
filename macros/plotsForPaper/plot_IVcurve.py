@@ -36,7 +36,7 @@ parser.add_argument("--comparison",   required=True, type=str, help="Type of com
 parser.add_argument("--IVorDCR",       required=True, type=str, help="Choose IVEff_ch or DCR")
 parser.add_argument("--outFolder", required=True, type=str, help="out folder: choose an existing ones")
 args = parser.parse_args()
-#usage: python3 plot_IVcurve.py --outFolder /eos/user/f/fcetorel/www/MTD/plot4BTLpaper/IVcurve/btlpaper_110424/ --comparison irradiation --IVorDCR IVEff_ch
+#usage: python3 plot_IVcurve.py --outFolder /eos/user/f/fcetorel/www/MTD/plot4BTLpaper/IVcurve/btlpaper_170424/ --comparison irradiation --IVorDCR IVEff_ch
 #outdir = '/eos/user/f/fcetorel/www/MTD/plot4BTLpaper/IVcurve/test/'
 outdir = args.outFolder
 comparison = args.comparison
@@ -50,7 +50,7 @@ irradiation = ''
 SiPM = ''
 
 if (comparison == 'cellsize'):  # USE FILES FROM MIA
-    xminleg = 0.72
+    xminleg = 0.76
     yminleg = 0.6
     fnames = { 30 : '/eos/cms/store/group/dpg_mtd/comm_mtd/TB/MTDTB_H8_Sep2023/ANALYSIS/TOFHIR2C/IVcurve_240310/logIVEff_TOFHIR2C_T2_size.root',
                25 : '/eos/cms/store/group/dpg_mtd/comm_mtd/TB/MTDTB_H8_Sep2023/ANALYSIS/TOFHIR2C/IVcurve_240310/logIVEff_TOFHIR2C_T2_size.root',
@@ -74,11 +74,43 @@ if (comparison == 'cellsize'):  # USE FILES FROM MIA
                   20 : [21, ROOT.kBlue,     '20 #mum'],
                   15 : [22, ROOT.kRed,      '15 #mum']
                 }
-    SiPM = 'HPK'
+    SiPM = '#splitline{ HPK }{T = -35 #circC}'
     irradiation = '2 #times 10^{14} 1 MeV n_{eq}/cm^{2}'
     ypadIV = 3000 
-    ypadDCR = 80
+    ypadDCR = 60
     xpad = 2.5
+
+elif comparison == 'temperature': 
+    xminleg =  0.75
+    yminleg =  0.69
+
+    fnames = {  40 : '/eos/cms/store/group/dpg_mtd/comm_mtd/TB/MTDTB_H8_Sep2023/logIVEff_TOFHIR2C_Sep23.root',
+                35 : '/eos/cms/store/group/dpg_mtd/comm_mtd/TB/MTDTB_H8_Sep2023/logIVEff_TOFHIR2C_Sep23.root',
+                30 : '/eos/cms/store/group/dpg_mtd/comm_mtd/TB/MTDTB_H8_Sep2023/logIVEff_TOFHIR2C_Sep23.root'
+              }
+
+
+    gnames = {
+               40: 'g_%s_HPK_2E14_LYSO815_T-40_ALDO'%IVorDCR,
+               35: 'g_%s_HPK_2E14_LYSO815_T-35_ALDO'%IVorDCR,
+               30: 'g_%s_HPK_2E14_LYSO815_T-30_ALDO'%IVorDCR
+             
+             }
+
+    labels = { 40 : 'HPK 25 μm T2 2E+14',
+               35 : 'HPK 25 μm T2 2E+14',
+               30 : 'HPK 25 um T2 2E+14',
+              }
+    
+    plotAttrs = { 40 : [23, ROOT.kTeal-3, 'T = -40 #circC'],
+                  35 : [20, ROOT.kGreen+2, 'T = -35 #circC'],
+                  30 : [21, ROOT.kSpring-7, 'T = -30 #circC'],
+                }
+    ypadIV = 4000 
+    ypadDCR = 60
+    xpad = 1.4
+    SiPM = 'HPK, 25 #mum'
+    irradiation = '2 #times 10^{14} 1 MeV n_{eq}/cm^{2}'
 
 elif comparison == 'irradiation': # 214 --> 2E14
     xminleg =  0.52
@@ -109,9 +141,9 @@ elif comparison == 'irradiation': # 214 --> 2E14
                  113 : [21, ROOT.kGreen-6,     '1 #times 10^{13} 1 MeV n_{eq}/cm^{2}'],
                 }
     ypadIV = 4000 
-    ypadDCR = 50
+    ypadDCR = 60
     xpad = 4.5
-    SiPM = 'HPK 25 #mum'
+    SiPM = '#splitline{ HPK, 25 #mum}{T = -35 #circC}'
 
 elif comparison == 'vendor': # 214 --> 2E14
     xminleg =  0.66
@@ -133,10 +165,10 @@ elif comparison == 'vendor': # 214 --> 2E14
                 }
  
     irradiation = '2 #times 10^{14} 1 MeV n_{eq}/cm^{2}'
-    SiPM = ''
+    SiPM = 'T = -35 #circC'
     ypadIV = 3000 
-    ypadDCR = 50
-    xpad = 2.5
+    ypadDCR = 60
+    xpad = 1.4
 
              
 
@@ -166,9 +198,12 @@ for key, gname in gnames.items():
     for i in range(0, npoints): #omitting npoints+1 to be completely sure to be in the common range between the two 
         x = i*deltax + x0
 
-        if (comparison == 'irradiation'  and key == 214 and (x > 0.51 and x < 0.535) ): continue #omit some no good points
-            #x = 0.5
-            #g[gname+'Ave'].SetPoint( g[gname+'Ave'].GetN(), x, (gA.Eval(x) +   gB.Eval(x)) / 2 )
+        if (comparison == 'irradiation'  and key == 214 and (x > 0.49 and x < 0.555) ):
+            print ('removing bad point', gname, x , (gA.Eval(x) +   gB.Eval(x)) / 2)
+            continue #omit some no good points
+        if (comparison == 'temperature'  and key == 30 and (x > 0.42 and x < 0.465) ): 
+            print ('removing bad point', gname, x , (gA.Eval(x) +   gB.Eval(x)) / 2)
+            continue #omit some no good points
         g[gname+'Ave'].SetPoint( g[gname+'Ave'].GetN(), x, (gA.Eval(x) +   gB.Eval(x)) / 2 )
         
         #print (gname, x ,  gA.Eval(x) ,   gB.Eval(x) ,  (gA.Eval(x) +   gB.Eval(x)) / 2)
@@ -181,7 +216,6 @@ for ALDO in ['A','B', 'Ave']:
     #leg = ROOT.TLegend(0.20, yminleg, 0.50, 0.89) #aligned on the left
     #if comparison == 'irradiation': leg = ROOT.TLegend(0.50, yminleg, 0.89, 0.89)  #aligned on the right
     leg = ROOT.TLegend(xminleg, yminleg, 0.86, 0.89)  #aligned on the right
-    #leg.SetTextAlign(32)
     leg.SetBorderSize(0)
     leg.SetFillStyle(0)
     leg.SetTextFont(42)
@@ -220,8 +254,8 @@ for ALDO in ['A','B', 'Ave']:
     tl2.SetNDC()
     tl2.SetTextFont(42)
     tl2.SetTextSize(0.045)
-    tl2.DrawLatex(0.20,0.85,SiPM)
-    #if comparison == 'irradiation': tl2.DrawLatex(0.20,0.85,SiPM)
+    if comparison == 'irradiation' or comparison == 'cellsize': tl2.DrawLatex(0.20,0.82,SiPM)
+    else: tl2.DrawLatex(0.20,0.85,SiPM)
     #else: tl2.DrawLatex(0.20,0.20,SiPM)
 
     tl = ROOT.TLatex()
