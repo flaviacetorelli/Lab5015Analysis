@@ -9,6 +9,7 @@ import subprocess
 #--------> ex: 
 #python3 create_config_uniformity.py -d /afs/cern.ch/work/f/fcetorel/private/work2/dev_TB_CERN_Sept2023/ -r 6062 -t -35 -ov 1.5 -ml HPK_2E14_C25_LYSO100056 -c config_51.04
 #python3 create_config_uniformity.py -d /afs/cern.ch/work/f/fcetorel/private/work2/dev_TB_CERN_Sept2023/ -r 6260,6264 -t 5 -ov 3.5 -ml HPK_nonIrr_C25_LYSO818  -c config_61.00
+#python3 create_config_uniformity.py  -d /afs/cern.ch/work/f/fcetorel/private/work2/dev_TB_CERN_Sept2023/ -r 6256 -ml HPK_nonIrr_C25_LYSO818 -t 5 -ov 1.0 -c config_61.00 
 # ----
 #cfgFolder = '/afs/cern.ch/work/f/fcetorel/private/work2/TBMay2023/Lab5015Analysis/scripts/cfg/TOFHIR2C/'
 # ----

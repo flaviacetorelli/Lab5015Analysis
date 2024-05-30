@@ -162,6 +162,7 @@ os.system('mkdir %s/summaryPlots/timeResolution/fits/'%outdir)
 
 # -- ref threhsold
 thRef = 15
+#thRef = 20
 
 # -- get list of bars, Vovs, thresholds to be analyzed
 bars = []
@@ -744,14 +745,14 @@ for label in label_list:
                      for peak in peaks:
                         energyPeak[peak] = [ fitFunc.GetParameter(1), fitFunc.GetParError(1)]
                   elif ( source == 'TB'):
-                     #fitFunc = h1_energy.GetFunction('f_landau_bar%02d%s_Vov%.02f_vth1_%02d'%(bar, l, vov, thr))
-                     #if (fitFunc==None): continue
-                     fitFunc = ROOT.TF1('f_landau_bar%02d%s_Vov%.02f_vth1_%02d'%(bar, l, vov, thr), '[0]*TMath::Landau(x,[1],[2])', 0,1000.)
-                     h1_energy.GetXaxis().SetRangeUser(50,800)
-                     emax = h1_energy.GetBinCenter(h1_energy.GetMaximumBin())
-                     fitFunc.SetParameters(10, emax, 30)
-                     fitFunc.SetRange(0.8*emax, 1.5*emax)
-                     h1_energy.Fit(fitFunc,'QR')
+                     fitFunc = h1_energy.GetFunction('f_landau_bar%02d%s_Vov%.02f_vth1_%02d'%(bar, l, vov, thr))
+                     if (fitFunc==None): continue
+                     #fitFunc = ROOT.TF1('f_landau_bar%02d%s_Vov%.02f_vth1_%02d'%(bar, l, vov, thr), '[0]*TMath::Landau(x,[1],[2])', 0,1000.)
+                     #h1_energy.GetXaxis().SetRangeUser(50,800)
+                     #emax = h1_energy.GetBinCenter(h1_energy.GetMaximumBin())
+                     #fitFunc.SetParameters(10, emax, 30)
+                     #fitFunc.SetRange(0.8*emax, 1.5*emax)
+                     #h1_energy.Fit(fitFunc,'QR')
                      #print bar, vov, thr, emax, fitFunc.GetParameter(1), fitFunc.GetParError(1)
                      for peak in peaks:
                         energyPeak[peak] = [fitFunc.GetParameter(1), fitFunc.GetParError(1)] 
@@ -1281,7 +1282,7 @@ for i, vov in enumerate(Vovs):
       g_energy_vs_bar[l, vov, thRef, refPeak].SetMarkerColor(cols[vov])
       g_energy_vs_bar[l, vov, thRef, refPeak].SetLineColor(cols[vov])
       g_energy_vs_bar[l, vov, thRef, refPeak].Draw('plsame')
-      outfile.cd()  
+      outfile.cd() 
       g_energy_vs_bar[l, vov, thRef, refPeak].Write('g_energy%s_vs_bar_Vov%.02f_th%02d'%(l,vov,thRef))
       leg.AddEntry(g_energy_vs_bar[l, vov, thRef, refPeak], 'energy%s V_{OV}^{eff} = %.02f V'%(l,VovsEff[vov]), 'PL')
    leg.Draw()

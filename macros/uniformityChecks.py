@@ -35,18 +35,23 @@ ROOT.gErrorIgnoreLevel = ROOT.kWarning
 
 
 # --- colors
-cols = { 'refbar 11' : 632,  
-         'refbar 2' : 451,  
-         'refbar 3' : 888,  
-         'refbar 4' : 50,  
-         'refbar 5' : 46, 
-         'refbar 7' : 51+44, 
-         'refbar 6' : 48, 
-         'refbar 8' : 51+20, 
-         'refbar 9' : 636, 
-         'refbar 10' : 52, 
-         'refbar 12' : 800, 
-         'refbar 1' : 666, 
+cols = { 
+         'refbar 0' : ROOT.kMagenta+1, 
+         'refbar 1' : ROOT.kOrange+8,  
+         'refbar 2' : ROOT.kOrange+4,  
+         'refbar 3' : ROOT.kOrange+2,  
+         'refbar 4' : ROOT.kRed+1,  
+         'refbar 5' : ROOT.kPink+10, 
+         'refbar 6' : ROOT.kOrange,  
+         'refbar 7' : ROOT.kMagenta+3, 
+         'refbar 8' : ROOT.kViolet+10, 
+         'refbar 9' : ROOT.kBlue+2, 
+         'refbar 10' : ROOT.kAzure+10, 
+         'refbar 11' :ROOT.kCyan, 
+         'refbar 12' :ROOT.kTeal+10, 
+         'refbar 13' :ROOT.kGreen-3, 
+         'refbar 14' :ROOT.kGreen+2 , 
+         'refbar 15' :ROOT.kGreen+4, 
 }
 # we can think about adding a parser
 # very hardcoded, modify before running, select the module here
@@ -56,6 +61,7 @@ parser = argparse.ArgumentParser(description='Module characterization summary pl
 parser.add_argument("-l",  "--label",   required=True, type=str, help="label in the form: HPK_2E14_C25_LYSO815_Vov1.50_T-30C, HPK_nonIrr_C25_LYSO813_Vov1.00_T-30C")
 parser.add_argument("-b",  "--baseFolder",  required=True, type=str, help="base folder")
 parser.add_argument("-o",  "--outFolder",   required=True, type=str, help="out folder")
+parser.add_argument( "--debug",   action='store_true', help="Debugging mode")
 args = parser.parse_args()
 
 #label = 'HPK_2E14_C25_LYSO815_Vov1.50_T-30C' 
@@ -115,25 +121,36 @@ elif args.label == 'HPK_2E14_C25_LYSO815_Vov2.00_T-30C':
   irradiation = '2 x 10^{14} 1 MeV n_{eq}/cm^{2}'
   refth = '05'
 elif args.label == 'HPK_2E14_C25_LYSO100056_Vov1.50_T-35C':
-  goodbars = [0,1, 2, 4, 5, 6, 7, 9, 10, 11, 12, 13, 14, 15]
+  goodbars = [0,1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15]
   vov = 1.50
   tresmin = 0
   tresmax = 120
-  refbarmin = 3
-  refbarmax = 13
+  refbarmin = 4
+  refbarmax = 12
   cellsize = '25 #mum'
   irradiation = '2 x 10^{14} 1 MeV n_{eq}/cm^{2}'
   refth = '15'
 elif args.label == 'HPK_nonIrr_C25_LYSO818_Vov3.50_T5C':
-  goodbars = [0,1, 2, 4, 5, 6, 7, 9, 10, 11, 12, 13, 14, 15]
+  goodbars = [0,1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15]
   vov = 3.50
   tresmin = 0
   tresmax = 120
-  refbarmin = 6
+  refbarmin = 4
+  refbarmax = 14
+  cellsize = '25 #mum'
+  irradiation = 'non irradiated'
+  refth = '20'
+elif args.label == 'HPK_nonIrr_C25_LYSO818_Vov1.00_T5C':
+  goodbars = [0,1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15]
+  vov = 1.00
+  tresmin = 0
+  tresmax = 120
+  refbarmin = 4
   refbarmax = 12
   cellsize = '25 #mum'
   irradiation = 'non irradiated'
   refth = '15'
+
 
 
 #decide the graph to run on here
@@ -175,12 +192,12 @@ for graphname in graphnames: #main loop on the different graphs (eg. energy, tre
 
   print ('Doing ', graphname)
 
-  for refbar in range(refbarmin,refbarmax): #loop on coincidence bars
-    if ('3.50' in args.label and refbar == 7): continue 
+  for refbar in range(refbarmin,refbarmax+1): #loop on coincidence bars
+    #if ('3.50' in args.label and refbar == 7): continue 
     gnameComplete = graphname
     f = ROOT.TFile.Open('%s/%s_refbar%i/summaryPlots_%s_refbar%i.root'%(basedir,label, refbar,label, refbar))
     if f == None: continue
-    print ('%s/%s_refbar%i/summaryPlots_%s_refbar%i.root'%(basedir,label, refbar,label, refbar))
+    if args.debug: print ('%s/%s_refbar%i/summaryPlots_%s_refbar%i.root'%(basedir,label, refbar,label, refbar))
     if 'deltaT' in graphname: 
       hdummy.GetYaxis().SetTitle('time resolution [ps]')
       hdummy.GetYaxis().SetRangeUser(tresmin, tresmax)
@@ -189,7 +206,7 @@ for graphname in graphnames: #main loop on the different graphs (eg. energy, tre
       hdummy.GetYaxis().SetTitle('Energy a.u.')
       hdummy.GetYaxis().SetRangeUser(0, 450)
       gnameComplete = '%s_Vov%.02f_th%s'%(graphname, vov,refth)
-      print (gnameComplete)
+      if args.debug: print (gnameComplete)
     if f.Get('g_%s'%(gnameComplete)) == None: continue
     gg['refbar %i'%refbar] = f.Get('g_%s'%(gnameComplete))
     gg['refbar %i'%refbar].SetName('g_%s_refbar%i'%(gnameComplete, refbar))
@@ -201,7 +218,8 @@ for graphname in graphnames: #main loop on the different graphs (eg. energy, tre
       gg['refbar %i'%refbar].Fit(fitpol0,'QSN')
       #gg['refbar %i'%refbar].Print()
       ave, err = [fitpol0.GetParameter(0),fitpol0.GetParError(0)]
-      print (ave, err)
+      #print (ave, err)
+      print ('RefBar %02d Average tRes = %.01f, spread (RMS) of tRes = %.01f %%'%(refbar, fitpol0.GetParameter(0), 100* gg['refbar %i'%refbar].GetRMS(2)/ gg['refbar %i'%refbar].GetMean(2)))
       g_tRes_average[graphname].SetPoint(g_tRes_average[graphname].GetN(),refbar , ave)
       g_tRes_average[graphname].SetPointError(g_tRes_average[graphname].GetN()-1, 0, err)
     
@@ -213,13 +231,10 @@ for graphname in graphnames: #main loop on the different graphs (eg. energy, tre
       gg['refbar %i'%refbar].Draw("pl same")
       fitpol0.Draw("same") 
 
-      #CMS_lumi.CMS_lumi(c,  1,  0)
       c.SaveAs(outdir+'g_%s_refbar%i.png'%(gnameComplete, refbar))
 
 
     f.Close()  
-    
-   
     
   # draw cumulative plot  
   hdummy.GetXaxis().SetTitle('bar')
@@ -254,17 +269,13 @@ for graphname in graphnames: #main loop on the different graphs (eg. energy, tre
     hdummy.GetXaxis().SetTitle('coincidence bar')
     hdummy.GetYaxis().SetRangeUser(0, 120)
     hdummy.Draw()
-    #leg = ROOT.TLegend(0.15,0.74,0.80,0.92)
-    #leg.SetBorderSize(0)
-    #leg.SetFillStyle(0)
-    #leg.SetNColumns(2);
-    
+
     g_tRes_average[graphname].SetMarkerStyle(20) 
     g_tRes_average[graphname].SetMarkerSize(1)
     g_tRes_average[graphname].SetMarkerColor(601)
     g_tRes_average[graphname].Draw("p") 
     latex.Draw("")
-    #CMS_lumi.CMS_lumi(c1,  1,  0)
+
     c1.SaveAs(outdir+graphname+'_tResAve_vs_coincBar.png')
     outfile.cd()
     g_tRes_average[graphname].Write(g_tRes_average[graphname].GetName())
@@ -277,9 +288,7 @@ for graphname in graphnames: #main loop on the different graphs (eg. energy, tre
   hPerBars = OrderedDict() #to make 1 histo for each DUT bar: time res/ en res vs reference bar
 
   for idx,bar in enumerate(goodbars): #NB goodbars != all bars
-    print ("index = ", idx, "goodbar = ", bar)
-    #if (bar not in goodbars): continue
-    #print ("... Is in goodbars :)")
+    if args.debug: print ("index = ", idx, "goodbar = ", bar)
     gdummy = ROOT.TGraphErrors()
     hdum = ROOT.TH1F("", "", 200,tresmin,tresmax)
     for key, g in gg.items():
@@ -303,7 +312,7 @@ for graphname in graphnames: #main loop on the different graphs (eg. energy, tre
         htotal.Fill(yval)
         tot.append(yval)
 
-      print (gnameComplete, 'key = ', key, 'idx of loop = ', idx, 'bar = ', bar, 'gbar = ', gbar, 'tRes or En',  yval)
+      if args.debug: print (gnameComplete, 'key = ', key, 'idx of loop = ', idx, 'bar = ', bar, 'gbar = ', gbar, 'tRes or En',  yval)
     gPerBars['bar%i'%bar] = gdummy
     hPerBars['bar%i'%bar] = hdum
 
@@ -318,7 +327,6 @@ for graphname in graphnames: #main loop on the different graphs (eg. energy, tre
     gPerBars['bar%i'%bar].Draw('plsame')
 
     latex.Draw("")
-    #CMS_lumi.CMS_lumi(c,  1,  0)
   
     c.SaveAs(outdir+c1.GetName()+'_bar%i.png'%bar)
     c.SaveAs(outdir+c1.GetName()+'_bar%i.pdf'%bar)
@@ -328,47 +336,55 @@ for graphname in graphnames: #main loop on the different graphs (eg. energy, tre
 
 
 
-    c.Clear()
-    c.cd()
-    hPerBars['bar%i'%bar].Draw('histo')
-    #print (b , hPerBars['bar%i'%b].GetMean(), hPerBars['bar%i'%b].GetRMS())
-    gaus = ROOT.TF1("","gaus",tresmin,tresmax)
-    gaus.SetLineColor(2)
-    gaus.SetParameter(1,  hPerBars['bar%i'%bar].GetMean())
-    hPerBars['bar%i'%bar].Fit(gaus, "qR")
-    leg = ROOT.TLegend(0.15,0.74,0.80,0.92)
-    leg.SetBorderSize(0)
-    leg.SetFillStyle(0)
+    #c.Clear()
+    #c.cd()
+    #hPerBars['bar%i'%bar].Draw('histo')
+    #gaus = ROOT.TF1("","gaus",tresmin,tresmax)
+    #gaus.SetLineColor(2)
+    #gaus.SetParameter(1,  hPerBars['bar%i'%bar].GetMean())
+    #hPerBars['bar%i'%bar].Fit(gaus, "qR")
+    #leg = ROOT.TLegend(0.15,0.74,0.80,0.92)
+    #leg.SetBorderSize(0)
+    #leg.SetFillStyle(0)
 
-    gaus.Draw("same")    
+    #gaus.Draw("same")    
 
-    #c.SaveAs(outdir+c1.GetName()+'_bar%i_histo.png'%b)
-    #c.SaveAs(outdir+c1.GetName()+'_bar%i_histo.pdf'%b)
+    ##c.SaveAs(outdir+c1.GetName()+'_bar%i_histo.png'%b)
+    ##c.SaveAs(outdir+c1.GetName()+'_bar%i_histo.pdf'%b)
 
 
-# Summary of tot as tres - <tres> / <tres>
+
+# Summary of tRes for all bars and all refs
 c =  ROOT.TCanvas('c_b','c_b',600,500)
 c.SetGridy()
 c.SetGridx()
 c.cd()
 
- 
-hsummary = ROOT.TH1F("tResSpread", "", 100, -0.5, 0.5)
+ROOT.gStyle.SetOptStat(1)
+htotal.Draw("histo")
+htotal.GetXaxis().SetTitle('#sigma_{t}')
+c.SaveAs(outdir+'tRes_histoAllRefBars.png')
+
+c.Clear()
+
+
+# Summary of tot as tres - <tres> / <tres>
+ROOT.gStyle.SetOptStat(0)
+hsummary = ROOT.TH1F("tResSpread", "", 50, -0.5, 0.5)
 for t in tot:
   #print (t, htotal.GetMean())
   hsummary.Fill((t - htotal.GetMean() )/ htotal.GetMean() )
   
-g = ROOT.TF1("", "gaus", -0.5, 0.5)
+g = ROOT.TF1("", "gaus", hsummary.GetMean()-3*hsummary.GetRMS(), hsummary.GetMean()+3*hsummary.GetRMS())
 g.SetParameter(1, hsummary.GetMean())
-hsummary.Fit(g, "q")
+hsummary.Fit(g, "QRSN")
+hsummary.Fit(g,"QRS","", g.GetParameter(1)-3*g.GetParameter(2),g.GetParameter(1)+3*g.GetParameter(2) )
+hsummary.Fit(g,"QRS+","", g.GetParameter(1)-3*g.GetParameter(2),g.GetParameter(1)+3*g.GetParameter(2) )
 hsummary.GetXaxis().SetTitle("(#sigma_{t} - <#sigma_{t}>) / #sigma_{t}  ")
 g.SetLineColor(3)  
  
 hsummary.Draw('histo') 
 g.Draw("same")
-
-latex.Draw("")
-#CMS_lumi.CMS_lumi(c,  1,  0)
  
 c.SaveAs(outdir+hsummary.GetName()+'.png')
 c.SaveAs(outdir+hsummary.GetName()+'.pdf')
@@ -429,7 +445,7 @@ for i,bar in enumerate(goodbars):
   c.Clear()
   ROOT.gStyle.SetOptFit(0)
   #Normalizing to mean of L-R
-  en_LR.Fit("fitEne")
+  en_LR.Fit("fitEne", "Q")
   aveEne = fitEne.GetParameter(0)
 
   en_LR.Scale(1./aveEne)
