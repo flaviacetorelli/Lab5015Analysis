@@ -74,7 +74,7 @@ if (comparison == 'cellsize'):  # USE FILES FROM MIA
                   20 : [21, ROOT.kBlue,     '20 #mum'],
                   15 : [22, ROOT.kRed,      '15 #mum']
                 }
-    SiPM = '#splitline{ HPK }{T = -35 #circC}'
+    SiPM = '#splitline{HPK }{T = -35 #circC}'
     irradiation = '2 #times 10^{14} 1 MeV n_{eq}/cm^{2}'
     ypadIV = 3000 
     ypadDCR = 60
@@ -143,7 +143,7 @@ elif comparison == 'irradiation': # 214 --> 2E14
     ypadIV = 4000 
     ypadDCR = 60
     xpad = 4.5
-    SiPM = '#splitline{ HPK, 25 #mum}{T = -35 #circC}'
+    SiPM = '#splitline{HPK, 25 #mum}{T = -35 #circC}'
 
 elif comparison == 'vendor': # 214 --> 2E14
     xminleg =  0.66
@@ -264,8 +264,8 @@ for ALDO in ['A','B', 'Ave']:
     tl.SetTextSize(0.045)
     tl.DrawLatex(0.58,0.20,irradiation)
     
-    cms_logo = draw_logo()
-    cms_logo.Draw()
+    #cms_logo = draw_logo()
+    #cms_logo.Draw()
     
     c.SaveAs(outdir+'%s.png'%c.GetName())
     c.SaveAs(outdir+'%s.pdf'%c.GetName())
@@ -311,8 +311,8 @@ for key,gname in gnames.items():
     
     tl.DrawLatex(0.58,0.20,irradiation)
     
-    cms_logo = draw_logo()
-    cms_logo.Draw()
+    #cms_logo = draw_logo()
+    #cms_logo.Draw()
     
     c.SaveAs(outdir+'%s.png'%c.GetName())
     c.SaveAs(outdir+'%s.pdf'%c.GetName())
