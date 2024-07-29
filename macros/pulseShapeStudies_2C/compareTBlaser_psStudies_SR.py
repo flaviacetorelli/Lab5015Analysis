@@ -1,4 +1,6 @@
 #! /usr/bin/env python3
+#macro to compare Slew rate from laser data and TB data
+
 import os
 import shutil
 import glob
@@ -116,7 +118,7 @@ c = ROOT.TCanvas('c_SR_vs_gainNpe_allVovs_TBLaser','c_SR_vs_gainNpe_allVovs_TBLa
 
 inFileLaser = ROOT.TFile.Open('plots_SRt1_LYSO818_pulseShapeStudy_vsNpe.root')
 mgLaser = inFileLaser.Get('g_SRglob_vs_gainNpe_th%02d'%thFixed)
-fLaser = inFileLaser.Get('f_SRglob_vs_gainNpe_th%02d'%thFixed)
+fLaser = inFileLaser.Get('f_SRglob_vs_gainNpe_lin_th%02d'%thFixed)
 #mgLaser.FindObject('f_SRglob_vs_gainNpe_th%02d'%thFixed).Delete()
 c.SetGrid()
 c.cd()
@@ -133,6 +135,6 @@ for Vov in Vovs:
     gs[Vov].Draw("PL same")
 
 
-c.SaveAs(outdir+c.GetName()+'_barsAve_th%02d_v1.png'%thFixed)
+c.SaveAs(outdir+c.GetName()+'_barsAve_th%02d.png'%thFixed)
         
 

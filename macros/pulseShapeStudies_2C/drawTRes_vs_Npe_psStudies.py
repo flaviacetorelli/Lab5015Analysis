@@ -79,13 +79,15 @@ g_t1_vs_gainNpe = {}
 g_SR_vs_bar = {}
 g_SRAve_vs_gainNpe = {}
 
+angleFact = math.cos(49 * math.pi / 180) / math.cos(52 * math.pi / 180)
+#print (angleFact)
 for Vov in Vovs:
 
         g_SRAve_vs_gainNpe[Vov] = ROOT.TGraphErrors()
         g_SRAve_vs_gainNpe[Vov].SetName('g_pulseShapeL-R_barsAve_Vov%.2f'%Vov)
         g_SR_vs_bar[Vov] = ROOT.TGraphErrors()
 
-        Npe = (LO_at3p5* PDE(sipmType, Vov) /PDE(sipmType, 3.50))* 4.2 * 1.25
+        Npe = (LO_at3p5* PDE(sipmType, Vov) /PDE(sipmType, 3.50))* 4.2 * 1.25  * (1./ angleFact)
         gain = Gain(sipmType,Vov)
         print ('Gain = %f and Npe = %f'%(gain,Npe))
 
@@ -130,7 +132,7 @@ for Vov in Vovs:
                         graph.Fit(fitSR,'QRS')
 
                         ctemp = ROOT.TCanvas('ctemp_Vov%.2f_bar%02d%s'%(Vov,bar, ch),'ctemp_Vov%.2f_bar%02d%s'%(Vov,bar, ch))
-                        graph.GetXaxis().SetRangeUser(graph.GetX()[1]-0.5,graph.GetX()[1]+2)
+                        #graph.GetXaxis().SetRangeUser(graph.GetX()[1]-0.5,graph.GetX()[1]+2)
                         graph.Draw('ap')
                         line1 = ROOT.TLine(graph.GetX()[1]-0.5, thRef * dac_to_uA[ithMode], graph.GetX()[1]+2,  thRef * dac_to_uA[ithMode]);
                         line1.SetLineWidth(1)
