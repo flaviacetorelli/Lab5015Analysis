@@ -118,37 +118,43 @@ args = parser.parse_args()
 
 irradiation = ''
 bars = [0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15]
-
-if args.label == 'HPK_nonIrr_C25_LYSO813_Vov1.00_T5C':
+if args.label == 'HPK_nonIrr_C25_LYSO813_Vov1.00_T-30C':
   goodBars = {
            5: [0,1, 2, 3, 4, 5, 6, 8, 9, 10, 11, 12, 13, 14, 15], # 7
            7: [0,1, 2, 3, 4, 5, 6, 8, 9, 10, 11, 12, 13, 14, 15], # 7
            11: [0,1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15],
            15: [0,1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15],
            20: [0,1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15],
-           25: [0, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13,  15] #1 not there, 6 , 14
+           25: [0, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 15] #1 not there, 14
            }
   vov = 1.00
   refbarmin = 2
   refbarmax = 11
   cellsize = '25 #mum'
   irradiation = 'non irradiated'
-  angle = 52 # May Module were at 52°
-  offsetX = 0 
-
+  angle = 52 # May module at 52
+  offsetX = 0
 
 
 elif args.label == 'HPK_2E14_C25_LYSO815_Vov1.50_T-35C':
-  goodbars = [1, 2, 4, 5, 6, 7, 9, 10, 11, 12, 13, 14, 15]
+  goodBars = { #bar3 no visible and 15L as well
+           5: [0,1, 2,  4, 5,  6, 10, 11, 12, 13, 14], #7,8,9 R not fitted
+           7: [0,1, 2,  4, 5,  6, 10, 11, 12, 13, 14], #7,8,9 R not fitted
+           11: [0,1, 2, 4, 5, 6, 7, 9, 10, 11, 12, 13, 14], #8L-R
+           15: [0,1, 2, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14],
+           20: [0,1, 2, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14],
+           25: [0, 2, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13], # 1,14 not there
+           }
   vov = 1.50
-  tresmin = 0
-  tresmax = 120
   refbarmin = 2
-  refbarmax = 12
+  refbarmax = 10
   cellsize = '25 #mum'
-  angle = 52 # MAY Module were at 52°
-  offsetX = 0 
   irradiation = '2 x 10^{14} 1 MeV n_{eq}/cm^{2}'
+  angle = 52 # MAY Module were at 52°
+  #offsetX = 6 #central bar
+  offsetX = 0 #central bar
+
+
 
 elif args.label == 'HPK_2E14_C25_LYSO100056_Vov1.50_T-35C':
   goodBars = {
@@ -200,7 +206,7 @@ elif args.label == 'HPK_nonIrr_C25_LYSO818_Vov1.00_T5C':
   offsetX = 0 
 
 
-barConversionFact = 0.3122 / math.cos(angle*math.pi/180) # [cm]
+barConversionFact = 0.312 / math.cos(angle*math.pi/180) # [cm]
 
 
 label = args.label
@@ -271,7 +277,10 @@ for refth, goodbars in goodBars.items():
     leg.SetNColumns(2)
     
     # define 1 graph for each bar of the DUT
-    hSummary = ROOT.TH1F("h_refth%02d"%refth, "h_refth%02d"%refth, 100, -400, 400 )
+    if '813' or '815' in args.label: 
+        hSummary = ROOT.TH1F("h_refth%02d"%refth, "h_refth%02d"%refth, 50, -400, 0 )
+    else:
+        hSummary = ROOT.TH1F("h_refth%02d"%refth, "h_refth%02d"%refth, 100, -400, 400 )
     hSummary.GetXaxis().SetRangeUser(-250, -100)
    
     # draw Plots and do fit 
@@ -323,7 +332,6 @@ for refth, goodbars in goodBars.items():
      
         hSummary.Fill(lin.GetParameter(1))
     
-            
     c2.SaveAs('%s/%s_refTh%02d.png'%(outdir,c2.GetName(), refth))
     c =  ROOT.TCanvas('LCSlope_summary_%s_refTh%02d'%(graphname, refth),'LCSlope_summary_%s_refTh%02d'%(graphname, refth),600,500)
     c.cd()
@@ -336,19 +344,28 @@ for refth, goodbars in goodBars.items():
     gausF.SetLineStyle(2)
     gausF.Draw("same")
     c.SaveAs('%s/%s.png'%(outdir,c.GetName()))
-    gVsTh.SetPoint(gVsTh.GetN(), refth, gausF.GetParameter(1))
+    gVsTh.SetPoint(gVsTh.GetN(), refth, abs(gausF.GetParameter(1)))
     gVsTh.SetPointError(gVsTh.GetN()-1, 0, gausF.GetParError(1))
+    if refth == 15:
+    
+        print ("Mean   --   RMS   -- entries --  errMean")
+        print ("%.3f  --   %.3f   -- %.0f  --   %.3f"%(hSummary.GetMean(), hSummary.GetRMS(), hSummary.GetEntries() , hSummary.GetRMS()/math.sqrt(hSummary.GetEntries())))
+
 
 c.Clear()
 c.cd()
+
 hdummy.SetTitle("; th ; Slope tDiff VS x [ps/cm]  ")
 hdummy.GetXaxis().SetRangeUser(0,30)
-hdummy.GetYaxis().SetRangeUser(-300, -100)
+#hdummy.GetYaxis().SetRangeUser(-300, -100)
+hdummy.GetYaxis().SetRangeUser(100, 300)
 hdummy.Draw("")
-gVsTh.Print()
+#gVsTh.Print()
+
 gVsTh.SetLineColor(ROOT.kBlack)
 gVsTh.SetMarkerColor(ROOT.kBlack)
 gVsTh.SetMarkerStyle(21)
+#gVsTh.Fit("pol1", "Q")
 gVsTh.Draw("pl")
 c.SaveAs('%s/%s_vsTh.png'%(outdir,c.GetName() ))
 

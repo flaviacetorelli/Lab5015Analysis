@@ -86,7 +86,7 @@ if args.label == 'HPK_nonIrr_C25_LYSO813_Vov1.00_T-30C':
   refbarmax = 11
   cellsize = '25 #mum'
   irradiation = 'non irradiated'
-  angle = 52 # Sept Module were at 49°
+  angle = 52 # May module were at 52
   offsetX = 0 
 
 
@@ -162,6 +162,25 @@ elif args.label == 'HPK_nonIrr_C25_LYSO818_Vov1.00_T5C':
   #6L refbar 7, 9, 10, 11 for th05/07 not fitted
   #refth = 15
 
+elif args.label == 'HPK_nonIrr_C25_LYSO818_Vov1.00_angle64_T5C':
+  goodBars = { #NB here best th is 15 due to beam set up during data taking, other th not so good
+           #5: [0,  2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15],
+           #7: [0,  3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15],
+           #11: [0, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15],
+           15: [ 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 15],
+           #20: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15],
+           #25: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15]
+           }
+  vov = 1.00
+  refbarmin = 6
+  refbarmax = 12
+  cellsize = '25 #mum'
+  irradiation = 'non irradiated'
+  angle = 61 # Sept Modules have offset of 3
+  #offsetX = 5 #central bar
+  offsetX = 0 #central bar
+
+
 barConversionFact = 0.312 / math.cos(angle*math.pi/180) # [cm]
 
 
@@ -180,7 +199,7 @@ hdummy = ROOT.TH2F('hdummy','',100,-30,30,5000,0.,2000)
 hdummy.GetXaxis().SetTitle('x [cm]')
 hdummy.GetYaxis().SetTitle('Energy [a.u.]')
 hdummy.GetXaxis().SetRangeUser(1, 6 )
-
+if '64' in args.label: hdummy.GetXaxis().SetRangeUser(2, 9 )
 latex = ROOT.TLatex(0.65,0.84,'%s'%(irradiation))
 latex.SetNDC()
 latex.SetTextSize(0.038)
@@ -245,7 +264,10 @@ for refth, goodbars in goodBars.items():
     elif  '100056' in args.label: 
         for l in ['L', 'L-R', 'allChs']: hSummary[l] = ROOT.TH1F("h_%s_refth%02d"%(l,refth), "h_%s_refth%02d"%(l,refth), 45,-0.15, 0.15 )
         for l in [ 'R' ]: hSummary[l] = ROOT.TH1F("h_%s_refth%02d"%(l,refth), "h_%s_refth%02d"%(l,refth), 60,-0.15, 0.15 )
- 
+    elif '64' in args.label: 
+        for l in ['L', 'R', 'L-R', 'allChs']: hSummary[l] = ROOT.TH1F("h_%s_refth%02d"%(l,refth), "h_%s_refth%02d"%(l,refth), 60,-0.15, 0.15 )
+
+    
     else: 
         for l in ['L', 'R', 'L-R', 'allChs']: hSummary[l] = ROOT.TH1F("h_%s_refth%02d"%(l,refth), "h_%s_refth%02d"%(l,refth), 60,-0.15, 0.15 )
     tl = ROOT.TLatex() 
@@ -339,6 +361,7 @@ for refth, goodbars in goodBars.items():
 
     
 
+    print ("Mean   --   RMS   -- entries --  errMean")
     #Finally drawing the summary plots of energy slope, and also average value for each th
     for l, hSum in hSummary.items():            
         c =  ROOT.TCanvas('Eslope_summary%s'%l,'Eslope_summary%s'%l,600,500)
@@ -347,6 +370,7 @@ for refth, goodbars in goodBars.items():
         hSum.SetTitle("; Slope energy VS x [%/cm] ; ")
         gausF = ROOT.TF1("gaus", "gaus", -500, 500)
         gausF.SetRange(hSum.GetMean()-3*hSum.GetRMS(), hSum.GetMean()+3*hSum.GetRMS())
+        print ("%.3f  --   %.3f   -- %.0f  --   %.3f"%(hSum.GetMean(), hSum.GetRMS(), hSum.GetEntries() , hSum.GetRMS()/math.sqrt(hSum.GetEntries())))
         hSum.Fit(gausF, "QSRN")
         gausF.SetLineColor(colors[l])
         gausF.SetLineStyle(colors[l])
