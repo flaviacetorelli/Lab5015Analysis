@@ -182,7 +182,7 @@ elif args.label == 'HPK_nonIrr_C25_LYSO818_Vov1.00_angle64_T5C':
 
 
 barConversionFact = 0.312 / math.cos(angle*math.pi/180) # [cm]
-
+print (barConversionFact)
 
 label = args.label
 outdir = '%s/%s'%(args.outFolder, label) 
@@ -363,14 +363,20 @@ for refth, goodbars in goodBars.items():
 
     print ("Mean   --   RMS   -- entries --  errMean")
     #Finally drawing the summary plots of energy slope, and also average value for each th
-    for l, hSum in hSummary.items():            
+    for l, hSum in hSummary.items(): 
+        #ROOT.gStyle.SetOptStat(1)
         c =  ROOT.TCanvas('Eslope_summary%s'%l,'Eslope_summary%s'%l,600,500)
         c.cd()
         hSum.Draw("histo")
-        hSum.SetTitle("; Slope energy VS x [%/cm] ; ")
+        hSum.SetTitle("; Slope energy VS x [cm^{-1}] ; ")
+
+        print ("%.3f  --   %.3f   -- %.0f  --   %.3f"%(hSum.GetMean(), hSum.GetRMS(), hSum.GetEntries() , hSum.GetRMS()/math.sqrt(hSum.GetEntries())))
+        text = ROOT.TLatex(0.2, 0.8, "#splitline{#splitline{Histo}{#mu = %.3f #pm %.3f}}{RMS = %.3f #pm %.3f}"%(hSum.GetMean(), hSum.GetMeanError(), hSum.GetRMS(), hSum.GetRMSError()))
+        text.SetNDC()
+        text.SetTextSize(0.040)
+
         gausF = ROOT.TF1("gaus", "gaus", -500, 500)
         gausF.SetRange(hSum.GetMean()-3*hSum.GetRMS(), hSum.GetMean()+3*hSum.GetRMS())
-        print ("%.3f  --   %.3f   -- %.0f  --   %.3f"%(hSum.GetMean(), hSum.GetRMS(), hSum.GetEntries() , hSum.GetRMS()/math.sqrt(hSum.GetEntries())))
         hSum.Fit(gausF, "QSRN")
         gausF.SetLineColor(colors[l])
         gausF.SetLineStyle(colors[l])
@@ -378,13 +384,16 @@ for refth, goodbars in goodBars.items():
         gausF.SetRange(gausF.GetParameter(1)-3*gausF.GetParameter(2), gausF.GetParameter(1)+3*gausF.GetParameter(2))
         hSum.Fit(gausF, "QSR")
 
+
         gausF.Draw("same")
+        text.Draw("same")
         c.SaveAs('%s/%s_refTh%02d.png'%(outdir,c.GetName(), refth ))
     
         gVsTh = gsVsTh [l]
         gVsTh.SetPoint(gVsTh.GetN(), refth, gausF.GetParameter(1))
         gVsTh.SetPointError(gVsTh.GetN()-1, 0, gausF.GetParError(1))
 
+#ROOT.gStyle.SetOptStat(0)
 # vs th plots
 leg = ROOT.TLegend(0.4, 0.75, 0.6, 0.9)
 leg.SetNColumns(2)

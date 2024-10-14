@@ -221,11 +221,11 @@ if (os.path.isdir(outdir) == False):
 print (outdir)
 
 # Canvas things
-hdummy = ROOT.TH2F('hdummy','',100,-30,30,1000,-1200,1200)
+hdummy = ROOT.TH2F('hdummy','',100,-30,30,1000,-1200,1500)
 hdummy.GetXaxis().SetTitle('x [cm]')
 hdummy.GetYaxis().SetTitle('#DeltaT [ps]')
 hdummy.GetXaxis().SetRangeUser(0, 6 )
-hdummy.GetYaxis().SetRangeUser(-1200, 1200 )
+hdummy.GetYaxis().SetRangeUser(-1100, 1400 )
 
 latex = ROOT.TLatex(0.65,0.84,'%s'%(irradiation))
 latex.SetNDC()
@@ -337,12 +337,19 @@ for refth, goodbars in goodBars.items():
     c.cd()
     hSummary.Draw("histo")
     hSummary.SetTitle("; Slope tDiff VS x [ps/cm] ; ")
+
+    text = ROOT.TLatex(0.62, 0.6, "#splitline{#splitline{Histo}{#mu = %.0f #pm %.0f}}{RMS = %.0f #pm %.0f}"%(hSummary.GetMean(), hSummary.GetMeanError(), hSummary.GetRMS(), hSummary.GetRMSError()))
+    text.SetNDC()
+    text.SetTextSize(0.040)
+
+
     gausF = ROOT.TF1("gaus", "gaus", -500, 500)
     gausF.SetRange(hSummary.GetMean()-3*hSummary.GetRMS(), hSummary.GetMean()+3*hSummary.GetRMS())
     hSummary.Fit(gausF, "SR")
     gausF.SetLineColor(2)
     gausF.SetLineStyle(2)
     gausF.Draw("same")
+    text.Draw("same")
     c.SaveAs('%s/%s.png'%(outdir,c.GetName()))
     gVsTh.SetPoint(gVsTh.GetN(), refth, abs(gausF.GetParameter(1)))
     gVsTh.SetPointError(gVsTh.GetN()-1, 0, gausF.GetParError(1))
