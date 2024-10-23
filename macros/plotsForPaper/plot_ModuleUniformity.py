@@ -31,6 +31,13 @@ ROOT.gStyle.SetPadTopMargin(0.07)
 ROOT.gROOT.SetBatch(True)
 ROOT.gErrorIgnoreLevel = ROOT.kWarning
 
+
+#since the TB sept data have 3 deg offset
+angleEff = 49
+angle = 52
+enScale = math.cos(angleEff*math.pi/180) / math.cos(angle*math.pi/180)
+
+
 from VovsEff import *
 # Import file with VovEff and DCR
 with open('/eos/cms/store/group/dpg_mtd/comm_mtd/TB/MTDTB_H8_Sep2023/VovsEff_TOFHIR2C.json', 'r') as f:
@@ -38,11 +45,11 @@ with open('/eos/cms/store/group/dpg_mtd/comm_mtd/TB/MTDTB_H8_Sep2023/VovsEff_TOF
 
 
 inputdir = '/eos/user/f/fcetorel/www/MTD/TBSept23/TOFHIR2C/ModuleCharacterization/'
-outdir   = '/eos/user/f/fcetorel/www/MTD/plot4BTLpaper/moduleUniformity/May24/'
+outdir   = '/eos/user/f/fcetorel/www/MTD/plot4BTLpaper/moduleUniformity/paper1_Oct24/'
 
-#modules = {'HPK_nonIrr_C25_LYSO818_Vov1.00_T5C', 'HPK_2E14_LYSO100056_T-35C'}
+modules = ['HPK_nonIrr_C25_LYSO818_Vov1.00_T5C', 'HPK_2E14_LYSO100056_T-35C']
 #modules = {'HPK_nonIrr_C25_LYSO818_Vov1.00_T5C','HPK_nonIrr_C25_LYSO818_Vov3.50_T5C', 'HPK_2E14_LYSO100056_T-35C'}
-modules = {'HPK_nonIrr_C25_LYSO818_Vov3.50_T5C', 'HPK_2E14_LYSO100056_T-35C'}
+#modules = ['HPK_nonIrr_C25_LYSO818_Vov3.50_T5C', 'HPK_2E14_LYSO100056_T-35C']
 
 fnames = { 
            'HPK_nonIrr_C25_LYSO818_Vov1.00_T5C' : inputdir+'HPK_nonIrr_C25_LYSO818_Vov1.00_T5C_refbar7/summaryPlots_HPK_nonIrr_C25_LYSO818_Vov1.00_T5C_refbar7.root',
@@ -75,7 +82,10 @@ h = {}
 h_all = ROOT.TH1F('h_all','h_all', 40, -0.8,0.8)
 h_irr = ROOT.TH1F('h_irr','h_irr', 40, -0.8,0.8)
 
-c = ROOT.TCanvas('c_timeResolution_vs_bar','c_timeResolution_vs_bar', 600, 500)
+if '3.5' in modules[0] or '3.5' in modules[1]:
+    c = ROOT.TCanvas('c_timeResolution_vs_bar_nonIrrVov3p5','c_timeResolution_vs_bar_nonIrrVov3p5', 600, 500)
+else:
+    c = ROOT.TCanvas('c_timeResolution_vs_bar','c_timeResolution_vs_bar', 600, 500)
 hPad = ROOT.TH2F('hPad','', 100, -0.5, 15.5, 100, 0, 120)
 hPad.SetTitle("; bar; time resolution [ps]")
 hPad.Draw()
@@ -110,7 +120,7 @@ for mod in modules:
       g = f.Get('g_deltaT_totRatioCorr_bestTh_vs_bar_Vov%.2f_enBin01'%vov) 
       print('g_deltaT_totRatioCorr_bestTh_vs_bar_Vov%.2f_enBin01'%vov)
       print(g.GetN())
-      
+      g.Scale(1./enScale)
       if (vov == bestVovs[mod]): 
          h[mod] = ROOT. TH1F('h_%s'%mod,'h_%s'%mod, 40, -0.8,0.8 )
          h[mod].SetLineColor(g.GetLineColor())
@@ -146,15 +156,10 @@ for mod in modules:
    cms_logo = draw_logo()
    cms_logo.Draw()
 
-#leg.Draw()
-#c.SaveAs(outdir+'%s.png'%c.GetName())
-#c.SaveAs(outdir+'%s.pdf'%c.GetName())
-#c.SaveAs(outdir+'%s.C'%c.GetName())
-#hPad.Delete()
-
 leg.Draw()
-c.SaveAs(outdir+'%s_v1.png'%c.GetName())
-c.SaveAs(outdir+'%s_v1.pdf'%c.GetName())
-c.SaveAs(outdir+'%s_v1.C'%c.GetName())
+c.SaveAs(outdir+'%s.png'%c.GetName())
+c.SaveAs(outdir+'%s.pdf'%c.GetName())
+c.SaveAs(outdir+'%s.C'%c.GetName())
 hPad.Delete()
-   
+
+  
