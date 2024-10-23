@@ -136,7 +136,7 @@ elif args.label == 'HPK_nonIrr_C25_LYSO818_Vov3.50_T5C':
   tresmin = 0
   tresmax = 120
   refbarmin = 4
-  refbarmax = 14
+  refbarmax = 13
   cellsize = '25 #mum'
   irradiation = 'non irradiated'
   refth = '20'
@@ -154,9 +154,7 @@ elif args.label == 'HPK_nonIrr_C25_LYSO818_Vov1.00_T5C':
 
 
 #decide the graph to run on here
-#graphnames = ['deltaT_totRatioCorr_bestTh_vs_bar', 'deltaT_energyRatioCorr_bestTh_vs_bar' ]    
 label = args.label
-#graphnames = ['deltaT_energyRatioCorr_bestTh_vs_bar' , 'deltaT_totRatioCorr_bestTh_vs_bar' , 'deltaT_energyRatioCorr_totRatioCorr_bestTh_vs_bar', 
 graphnames = ['deltaT_totRatioCorr_bestTh_vs_bar',
              'energyL_vs_bar', 'energyR_vs_bar', 'energyL-R_vs_bar']    
 outdir = args.outFolder +label + '/' #'/eos/user/f/fcetorel/www/MTD/TBMay23/TOFHIR2C/ModuleCharacterization/uniformityStudy_TBpaper_Jan23/%s/'%label
@@ -193,10 +191,11 @@ for graphname in graphnames: #main loop on the different graphs (eg. energy, tre
   print ('Doing ', graphname)
 
   for refbar in range(refbarmin,refbarmax+1): #loop on coincidence bars
-    #if ('3.50' in args.label and refbar == 7): continue 
     gnameComplete = graphname
     f = ROOT.TFile.Open('%s/%s_refbar%i/summaryPlots_%s_refbar%i.root'%(basedir,label, refbar,label, refbar))
-    if f == None: continue
+    if f == None: 
+        print ("File not found:: %s"%f.GetName())
+        continue
     if args.debug: print ('%s/%s_refbar%i/summaryPlots_%s_refbar%i.root'%(basedir,label, refbar,label, refbar))
     if 'deltaT' in graphname: 
       hdummy.GetYaxis().SetTitle('time resolution [ps]')
@@ -207,7 +206,9 @@ for graphname in graphnames: #main loop on the different graphs (eg. energy, tre
       hdummy.GetYaxis().SetRangeUser(0, 450)
       gnameComplete = '%s_Vov%.02f_th%s'%(graphname, vov,refth)
       if args.debug: print (gnameComplete)
-    if f.Get('g_%s'%(gnameComplete)) == None: continue
+    if f.Get('g_%s'%(gnameComplete)) == None: 
+        print ("Graph NOT found:: %s"%(gnameComplete))
+        continue
     gg['refbar %i'%refbar] = f.Get('g_%s'%(gnameComplete))
     gg['refbar %i'%refbar].SetName('g_%s_refbar%i'%(gnameComplete, refbar))
 
@@ -380,7 +381,7 @@ g.SetParameter(1, hsummary.GetMean())
 hsummary.Fit(g, "QRSN")
 hsummary.Fit(g,"QRS","", g.GetParameter(1)-3*g.GetParameter(2),g.GetParameter(1)+3*g.GetParameter(2) )
 hsummary.Fit(g,"QRS+","", g.GetParameter(1)-3*g.GetParameter(2),g.GetParameter(1)+3*g.GetParameter(2) )
-hsummary.GetXaxis().SetTitle("(#sigma_{t} - <#sigma_{t}>) / #sigma_{t}  ")
+hsummary.GetXaxis().SetTitle("(#sigma_{t} - <#sigma_{t}>) / <#sigma_{t}>  ")
 g.SetLineColor(3)  
  
 hsummary.Draw('histo') 
