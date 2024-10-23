@@ -814,6 +814,7 @@ for label in label_list:
                if ( tRes_totCorr[enBin][0] < bestRes_totCorr[bar, vov, enBin][0] ):
                #if ( (tRes_totCorr[enBin][0] < bestRes_totCorr[bar, vov, enBin][0]) and (tRes_totCorr[enBin][1] <= bestRes_totCorr[bar, vov, enBin][1]) ):
                   bestRes_totCorr[bar, vov, enBin] = tRes_totCorr[enBin]
+                  bestTh = thr
                ctemp = ROOT.TCanvas()
                h1_deltaT_totCorr.GetYaxis().SetRangeUser(0, h1_deltaT_totCorr.GetBinContent(h1_deltaT_totCorr.GetMaximumBin())*1.2)                
                h1_deltaT_totCorr.Draw()                
@@ -921,7 +922,8 @@ for label in label_list:
                g_deltaT_energyRatioCorr_posCorr_bestTh_vs_vov[bar, enBin].SetPointError(g_deltaT_energyRatioCorr_posCorr_bestTh_vs_vov[bar, enBin].GetN()-1, 0, (bestRes_energyCorr_posCorr[bar, vov, enBin][1])/kscale)
 
  
-            if (bestRes_totCorr[bar, vov, enBin][0]!= 9999): 
+            if (bestRes_totCorr[bar, vov, enBin][0]!= 9999):
+               if bar == 7: print (vov, bestTh)
                g_deltaT_totRatioCorr_bestTh_vs_vov[bar, enBin].SetPoint(g_deltaT_totRatioCorr_bestTh_vs_vov[bar, enBin].GetN(), VovsEff[vov], (bestRes_totCorr[bar, vov, enBin][0])/kscale )
                g_deltaT_totRatioCorr_bestTh_vs_vov[bar, enBin].SetPointError(g_deltaT_totRatioCorr_bestTh_vs_vov[bar, enBin].GetN()-1, 0, (bestRes_totCorr[bar, vov, enBin][1])/kscale)
  

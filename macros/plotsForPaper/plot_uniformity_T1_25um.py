@@ -121,11 +121,11 @@ f = {}
         
 
 c = ROOT.TCanvas('c_%s_barUniformity'%comparison, 'c_%s_barUniformity'%comparison,  600, 500)
-if comparison == 'tRes':
+if 'tRes' in comparison:
     leg = ROOT.TLegend(0.20, 0.74, 0.50, 0.87)
     hPad = ROOT.gPad.DrawFrame(-0.5,0.,15.5, 120)
     hPad.SetTitle("; reference bar; time resolution [ps]")
-elif comparison == 'energy':
+else:
     leg = ROOT.TLegend(0.69, 0.72, 0.89, 0.89)
     hPad = ROOT.gPad.DrawFrame(-0.5,0.6,15.5, 1.4)
     hPad.SetTitle("; reference bar; energy [a.u.]")
@@ -170,7 +170,7 @@ for key,gname in gnames.items():
     g[key].SetLineColor(plotAttrs[key][1])
     g[key].SetLineWidth(1)
     g[key].Draw("p same")
-    leg.AddEntry(g[key], '%s'%plotAttrs[key][2],'P')
+    leg.AddEntry(g[key], '%s'%plotAttrs[key][2],'PL')
 
 
 leg.Draw()
@@ -188,8 +188,8 @@ tl.SetTextFont(42)
 tl.SetTextSize(0.045)
 tl.DrawLatex(0.20,0.79,irradiation)
 
-cms_logo = draw_logo()
-cms_logo.Draw()
+#cms_logo = draw_logo()
+#cms_logo.Draw()
 
 c.SaveAs(outdir+'%s.png'%c.GetName())
 c.SaveAs(outdir+'%s.pdf'%c.GetName())
@@ -199,10 +199,10 @@ c.SaveAs(outdir+'%s.C'%c.GetName())
 
 ####### vs mm plots
 c1 = ROOT.TCanvas('c_%s_barUniformity_mm'%comparison, 'c_%s_barUniformity_mm'%comparison,  600, 500)
-if comparison == 'tRes':
+if 'tRes' in comparison:
     hPad1 = ROOT.gPad.DrawFrame(10.,0.,60, 120)
     hPad1.SetTitle("; x [mm]; time resolution [ps]")
-elif comparison == 'energy':
+else:
     hPad1 = ROOT.gPad.DrawFrame(10.,0.6,60., 1.4)
     hPad1.SetTitle("; x [mm]; energy [a.u.]")
 
@@ -230,8 +230,8 @@ tl2 = ROOT.TLatex()
 tl2.SetNDC()
 tl2.SetTextFont(42)
 tl2.SetTextSize(0.045)
-if comparison == 'tRes': tl2.DrawLatex(0.20,0.20,SiPM)
-elif comparison == 'energy': tl2.DrawLatex(0.20,0.85,SiPM)
+if 'tRes' in comparison: tl2.DrawLatex(0.20,0.20,SiPM)
+else: tl2.DrawLatex(0.20,0.85,SiPM)
 
 tl = ROOT.TLatex()
 tl.SetNDC()
@@ -239,8 +239,8 @@ tl.SetTextFont(42)
 tl.SetTextSize(0.045)
 tl.DrawLatex(0.20,0.79,irradiation)
 
-cms_logo = draw_logo()
-cms_logo.Draw()
+#cms_logo = draw_logo()
+#cms_logo.Draw()
 
 
 c1.SaveAs(outdir+'%s.png'%c1.GetName())

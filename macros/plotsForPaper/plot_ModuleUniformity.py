@@ -47,9 +47,9 @@ with open('/eos/cms/store/group/dpg_mtd/comm_mtd/TB/MTDTB_H8_Sep2023/VovsEff_TOF
 inputdir = '/eos/user/f/fcetorel/www/MTD/TBSept23/TOFHIR2C/ModuleCharacterization/'
 outdir   = '/eos/user/f/fcetorel/www/MTD/plot4BTLpaper/moduleUniformity/paper1_Oct24/'
 
-modules = ['HPK_nonIrr_C25_LYSO818_Vov1.00_T5C', 'HPK_2E14_LYSO100056_T-35C']
+#modules = ['HPK_nonIrr_C25_LYSO818_Vov1.00_T5C', 'HPK_2E14_LYSO100056_T-35C']
 #modules = {'HPK_nonIrr_C25_LYSO818_Vov1.00_T5C','HPK_nonIrr_C25_LYSO818_Vov3.50_T5C', 'HPK_2E14_LYSO100056_T-35C'}
-#modules = ['HPK_nonIrr_C25_LYSO818_Vov3.50_T5C', 'HPK_2E14_LYSO100056_T-35C']
+modules = ['HPK_nonIrr_C25_LYSO818_Vov3.50_T5C', 'HPK_2E14_LYSO100056_T-35C']
 
 fnames = { 
            'HPK_nonIrr_C25_LYSO818_Vov1.00_T5C' : inputdir+'HPK_nonIrr_C25_LYSO818_Vov1.00_T5C_refbar7/summaryPlots_HPK_nonIrr_C25_LYSO818_Vov1.00_T5C_refbar7.root',
@@ -153,8 +153,8 @@ for mod in modules:
    latex.SetTextFont(42)
    latex.Draw()
 
-   cms_logo = draw_logo()
-   cms_logo.Draw()
+   #cms_logo = draw_logo()
+   #cms_logo.Draw()
 
 leg.Draw()
 c.SaveAs(outdir+'%s.png'%c.GetName())
