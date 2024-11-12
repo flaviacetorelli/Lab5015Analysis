@@ -66,16 +66,17 @@ if (sipmProd == 'HPK'):  # USE FILES FROM SIMONA
               }
 
 else: # FILES FROM JIN WANG (20,25,30) and MARTINA (15 un June22 TB)
-    fnames = { 30 : '/afs/cern.ch/work/f/fcetorel/public/btlpaper/tres_vs_Vov_all_result.root',
-               25 : '/afs/cern.ch/work/f/fcetorel/public/btlpaper/tres_vs_Vov_all_result.root',
-               20 : '/afs/cern.ch/work/f/fcetorel/public/btlpaper/tres_vs_Vov_all_result.root',
+    fnames = { 30 : '/eos/cms/store/group/dpg_mtd/comm_mtd/TB/MTDTB_H8_Sep2023/ANALYSIS/TOFHIR2C/fbk_240319/tres_vs_Vov_all_result.root',
+               25 : '/eos/cms/store/group/dpg_mtd/comm_mtd/TB/MTDTB_H8_Sep2023/ANALYSIS/TOFHIR2C/fbk_240319/tres_vs_Vov_all_result.root',
+               20 : '/eos/cms/store/group/dpg_mtd/comm_mtd/TB/MTDTB_H8_Sep2023/ANALYSIS/TOFHIR2C/fbk_240319/tres_vs_Vov_all_result.root',
                15 : '/eos/cms/store/group/dpg_mtd/comm_mtd/TB/MTDTB_H8_Sep2023/ANALYSIS/TOFHIR2C/RootFiles/plots_timeResolution_HPK_FBK_nonIrr_TBJun22_TOFHIR2X.root'}
 
-    gnames = { 30 : ' module 28 (LYSO 200 046, FBK C30 Rq2 -T2 non-irr)',
-               25 : ' module 27 (LYSO 200 075, FBK C25 Rq2 -T2 non-irr)',
-               20 : 'module 29 (LYSO 200 074, FBK C20 Rq2 -T2 non-irr)',
+    gnames = { 30 : 'module28_LYSO_200046_FBK_C30_Rq2 _T2_nonirr',
+               25 : 'module27_LYSO200075_FBK_C25_Rq2_T2_nonirr',
+               20 : 'module29_LYSO200074_FBK_C20_Rq2_T2_nonirr',
                15 : 'g_data_vs_Vov_average_FBK_nonIrr_LYSO800_T10C',
               }
+
 
     labels = { 30 : '',
                25 : '',
