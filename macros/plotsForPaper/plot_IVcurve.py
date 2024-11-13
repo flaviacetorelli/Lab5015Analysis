@@ -175,7 +175,7 @@ elif comparison == 'jinst': #T2
     plotAttrs = { 'hpk_40' : [23, ROOT.kTeal-3, 'HPK 25 #mum, T = -40 #circC'],
                   'hpk_35' : [20, ROOT.kGreen+2, 'HPK 25 #mum, T = -35 #circC'],
                   'hpk_30' : [21, ROOT.kSpring-7, 'HPK 25 #mum, T = -30 #circC'],
-                  'fbk_35' : [24, ROOT.kGreen+2, 'FBK 25 #mum, T = -35 #circC']
+                  'fbk_35' : [24, ROOT.kAzure, 'FBK 25 #mum, T = -35 #circC']
                 }
     ypadIV = 4000 
     ypadDCR = 60
