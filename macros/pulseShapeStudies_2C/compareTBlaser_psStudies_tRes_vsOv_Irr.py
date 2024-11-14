@@ -68,7 +68,7 @@ label = 'HPK_2E14_C25_LYSO100056'
 sipmType = 'HPK-PIT-C25-ES2'
 LO_at3p5 = 2390
 temp = 'T-35C'
-outdir = '/eos/user/f/fcetorel/www/MTD/TBSept23/TOFHIR2C/pulseShapes/vsNPE/%s_%s/compareLaser/'%(label, temp)
+outdir = '/eos/user/f/fcetorel/www/MTD/TBSept23/TOFHIR2C/pulseShapes/vsNPE/%s_%s/compareLaser/upNote_Nov24/'%(label, temp)
 g_Npe_vs_Vov_ref = ROOT.TGraph()
 
 thBestFromTB = { #for bar07
@@ -91,13 +91,15 @@ bars = [0,1,2,3,4,5,6,7,8,9,10,11,13,14,15]
 Vovs = [ 0.645, 0.76, 0.875, 0.965]
 
 def tot(sipmType, vov, Npe, fSR, dcr):
-    noise_single = math.sqrt( pow(420/f_SR.Eval(Npe*Gain(sipmType, vov)*0.95),2) + 16.7*16.7 ) #added gain loss 5%
+    #noise_single = math.sqrt( pow(420/f_SR.Eval(Npe*Gain(sipmType, vov)*0.95),2) + 16.7*16.7 ) #added gain loss 5%
+    noise_single = math.sqrt( pow(420/f_SR.Eval(Npe*Gain(sipmType, vov)*0.95),2) + 13.3*13.3 ) #added gain loss 5%
     stoch = 25.7 * pow(7000/Npe,0.5)
     dcr_noise = 34 * (6000 / Npe) * pow(dcr/30, 0.41)
     return math.sqrt( pow(noise_single/math.sqrt(2),2) + pow(stoch,2) + pow(dcr_noise,2)) 
 
 def totNEW(sipmType, vov, Npe, fSR, dcr):
-    noise_single = math.sqrt( pow(420/f_SR.Eval(Npe*Gain(sipmType, vov)*0.95),2) + 16.7*16.7 ) #added gain loss 5%
+    #noise_single = math.sqrt( pow(420/f_SR.Eval(Npe*Gain(sipmType, vov)*0.95),2) + 16.7*16.7 ) #added gain loss 5%
+    noise_single = math.sqrt( pow(420/f_SR.Eval(Npe*Gain(sipmType, vov)*0.95),2) + 13.3*13.3 ) #added gain loss 5%
     stoch = 30 * pow(7000/Npe,0.7)
     dcr_noise = 34 * (6000 / Npe) * pow(dcr/30, 0.41)
     return math.sqrt( pow(noise_single/math.sqrt(2),2) + pow(stoch,2) + pow(dcr_noise,2)) 
@@ -144,7 +146,7 @@ c.SetGridy()
 hPad = ROOT.gPad.DrawFrame(0,0.,2.0, 100.)
 hPad.SetTitle(";  V_{ov}; time resolution [ps]")
 
-leg = ROOT.TLegend(0.7, 0.65, 0.92 , 0.92)
+leg = ROOT.TLegend(0.65, 0.65, 0.89 , 0.92)
 
 
 tRes_vs_Vov.SetLineColor(ROOT.kBlack)
@@ -174,8 +176,7 @@ tRes_exp2.SetFillColorAlpha(ROOT.kCyan+1,0.5)
 tRes_exp2.SetFillStyle(3004)
 tRes_exp2.Draw('E3lsame')    
 
-leg.AddEntry(tRes_exp2 , "alpha =  0.7, sigma = 30 ps ", "L" )
-#leg.AddEntry(tRes_exp2 , "alpha =  0.7", "L" )
+leg.AddEntry(tRes_exp2 , "expected", "L" )
 leg.AddEntry(tRes_vs_Vov, "TB points", "PL" )
 leg.Draw("same")
 
