@@ -196,7 +196,7 @@ print (outdir)
 
 # Canvas things
 hdummy = ROOT.TH2F('hdummy','',100,-30,30,5000,0.,2000)
-hdummy.GetXaxis().SetTitle('x [cm]')
+hdummy.GetXaxis().SetTitle('Hodoscope x [cm]')
 hdummy.GetYaxis().SetTitle('Energy [a.u.]')
 hdummy.GetXaxis().SetRangeUser(1, 6 )
 if '64' in args.label: hdummy.GetXaxis().SetRangeUser(2, 9 )
@@ -403,7 +403,7 @@ cTh.SetGridy()
 # Canvas things
 hdummy2 = ROOT.TH2F('hdummy','',100,-30,30, 100, -2, 2)
 hdummy2.GetXaxis().SetTitle('bar')
-hdummy2.GetYaxis().SetTitle('x [cm]')
+hdummy2.GetYaxis().SetTitle('Hodoscope x [cm]')
 hdummy2.GetYaxis().SetTitle('Energy [a.u.]')
 hdummy2.GetXaxis().SetRangeUser(0, 30 )
 hdummy2.GetYaxis().SetRangeUser(-0.1,  0.1)

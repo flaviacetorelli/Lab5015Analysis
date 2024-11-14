@@ -222,7 +222,7 @@ print (outdir)
 
 # Canvas things
 hdummy = ROOT.TH2F('hdummy','',100,-30,30,1000,-1200,1500)
-hdummy.GetXaxis().SetTitle('x [cm]')
+hdummy.GetXaxis().SetTitle('Hodoscope x [cm]')
 hdummy.GetYaxis().SetTitle('#DeltaT [ps]')
 hdummy.GetXaxis().SetRangeUser(0, 6 )
 hdummy.GetYaxis().SetRangeUser(-1100, 1400 )
