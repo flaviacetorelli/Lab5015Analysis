@@ -19,23 +19,24 @@ tdrstyle.setTDRStyle()
 ROOT.gStyle.SetOptStat(0)
 ROOT.gStyle.SetOptFit(0)
 ROOT.gStyle.SetOptTitle(0)
-ROOT.gStyle.SetLabelSize(0.055,'X')
-ROOT.gStyle.SetLabelSize(0.055,'Y')
-ROOT.gStyle.SetTitleSize(0.07,'X')
-ROOT.gStyle.SetTitleSize(0.07,'Y')
+ROOT.gStyle.SetLabelSize(0.052,'X') #0.055 before
+ROOT.gStyle.SetLabelSize(0.052,'Y')
+ROOT.gStyle.SetTitleSize(0.06,'X') #0.07 before
+ROOT.gStyle.SetTitleSize(0.06,'Y')
 ROOT.gStyle.SetTitleOffset(1.05,'X')
 ROOT.gStyle.SetTitleOffset(1.1,'Y')
 ROOT.gStyle.SetLegendFont(42)
 ROOT.gStyle.SetLegendTextSize(0.045)
-ROOT.gStyle.SetPadTopMargin(0.07)
+ROOT.gStyle.SetPadBottomMargin(0.13)
+ROOT.gStyle.SetPadTopMargin(0.13)
 ROOT.gROOT.SetBatch(True)
 ROOT.gErrorIgnoreLevel = ROOT.kWarning
 
 
-outdir = '/eos/user/f/fcetorel/www/MTD/plot4BTLpaper/uniformity/paper1_Oct24//'
+outdir = '/eos/user/f/fcetorel/www/MTD/plot4BTLpaper/uniformity/paper1_Nov24//'
 
-comparison = 'tRes'
-#comparison = 'tRes_nonIrrVov3p5'
+#comparison = 'tRes'
+comparison = 'tRes_nonIrrVov3p5'
 #comparison = 'energy'
 fnames = {}
 gnames = {}
@@ -62,7 +63,7 @@ if (comparison == 'tRes_nonIrrVov3p5'):
               }
     
     plotAttrs = { 
-                  818 : [20, ROOT.kRed+1, 'non irradiated, V_{OV} = 3.50 V'],
+                  818 : [20, ROOT.kGreen+2, 'non irradiated, V_{OV} = 3.50 V'],
                   100056 : [22, ROOT.kOrange+1,  '2 #times 10^{14} 1 MeV n_{eq}/cm^{2}, V_{OV} = 0.96 V'],
                 }
  
@@ -84,7 +85,7 @@ if (comparison == 'tRes'):
               }
     
     plotAttrs = { 
-                  818 : [20, ROOT.kGreen+2, 'non irradiated, V_{OV} = 1.00 V'],
+                  818 : [20, ROOT.kBlue, 'non irradiated, V_{OV} = 1.00 V'],
                   100056 : [22, ROOT.kOrange+1,  '2 #times 10^{14} 1 MeV n_{eq}/cm^{2}, V_{OV} = 0.96 V'],
                 }
  
@@ -122,7 +123,7 @@ f = {}
 
 c = ROOT.TCanvas('c_%s_barUniformity'%comparison, 'c_%s_barUniformity'%comparison,  600, 500)
 if 'tRes' in comparison:
-    leg = ROOT.TLegend(0.20, 0.74, 0.50, 0.87)
+    leg = ROOT.TLegend(0.20, 0.73, 0.50, 0.85)
     hPad = ROOT.gPad.DrawFrame(-0.5,0.,15.5, 120)
     hPad.SetTitle("; reference bar; time resolution [ps]")
 else:
@@ -132,8 +133,6 @@ else:
 
 leg.SetBorderSize(0)
 leg.SetFillStyle(0)
-leg.SetTextFont(42)
-leg.SetTextSize(0.045) 
 
 
 
@@ -200,7 +199,7 @@ c.SaveAs(outdir+'%s.C'%c.GetName())
 ####### vs mm plots
 c1 = ROOT.TCanvas('c_%s_barUniformity_mm'%comparison, 'c_%s_barUniformity_mm'%comparison,  600, 500)
 if 'tRes' in comparison:
-    hPad1 = ROOT.gPad.DrawFrame(10.,0.,60, 120)
+    hPad1 = ROOT.gPad.DrawFrame(-0.5*barConversionFact,0.,15.5*barConversionFact, 120)
     hPad1.SetTitle("; x [mm]; time resolution [ps]")
 else:
     hPad1 = ROOT.gPad.DrawFrame(10.,0.6,60., 1.4)
@@ -209,7 +208,9 @@ else:
 
 c1.SetGridy()
 hPad1.Draw()
-ROOT.gPad.SetTicks(1)
+#ROOT.gPad.SetTicks(1)
+ROOT.gPad.SetTicky(1)
+ROOT.gPad.SetTickx(0)
 
 
  
@@ -223,14 +224,24 @@ for key,gname in gnames.items():
     g_mm[key].Draw("p same")
  
 
-####
+#### new ax with bar info
+f1 = ROOT.TF1("f1","x",-0.5 ,15.5);
+xaxis2 = ROOT.TGaxis(-0.5*barConversionFact, 120 , 15.5*barConversionFact, 120,"f1",512,"-")
+xaxis2.SetTitle("reference module bar")
+xaxis2.Draw("same")
+xaxis2.SetLabelSize(0.052)
+xaxis2.SetTitleSize(0.06)
+xaxis2.SetTitleOffset(1.05)
+xaxis2.SetTitleFont(42)
+xaxis2.SetLabelFont(42)
+
 
 leg.Draw("same")
 tl2 = ROOT.TLatex()
 tl2.SetNDC()
 tl2.SetTextFont(42)
 tl2.SetTextSize(0.045)
-if 'tRes' in comparison: tl2.DrawLatex(0.20,0.20,SiPM)
+if 'tRes' in comparison: tl2.DrawLatex(0.20,0.18,SiPM)
 else: tl2.DrawLatex(0.20,0.85,SiPM)
 
 tl = ROOT.TLatex()
