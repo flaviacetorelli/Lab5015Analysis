@@ -33,7 +33,7 @@ ROOT.gStyle.SetPadTickY(1)
 ROOT.gROOT.SetBatch(True)
 ROOT.gErrorIgnoreLevel = ROOT.kWarning   
 
-def getDiff(h1_deltaT, saveFit, outdir, gname):
+def getDiff(h1_deltaT, saveFit, outdir, gname, refbar):
    c = ROOT.TCanvas()
    c.Clear()
    c.cd()
@@ -57,9 +57,30 @@ def getDiff(h1_deltaT, saveFit, outdir, gname):
 
    tDiff = [ fitFunc.GetParameter(1),fitFunc.GetParError(1)]
    if saveFit:
+       if  (os.path.isdir(outdir + "/fits") == False ): os.system('mkdir %s/fits/'%outdir)
        h1_deltaT.Draw("same histo")
        c.Update()
-       c.SaveAs("%s/fits/%s.png"%(outdir, gname))
+       c.SaveAs("%s/fits/%s_refbar%02d.png"%(outdir, gname, refbar))
+   return tDiff
+
+def getDiffMeanHisto(h1_deltaT, saveFit, outdir, gname, refbar): #getting the mean of the histo (not gaussian fit)
+   c = ROOT.TCanvas()
+   c.Clear()
+   c.cd()
+   tDiff = [-1,-1]
+
+   ROOT.gStyle.SetOptStat(1)
+   h1_deltaT.GetXaxis().SetRangeUser(h1_deltaT.GetMean() - 5*h1_deltaT.GetRMS(), h1_deltaT.GetMean() + 5*h1_deltaT.GetRMS())
+
+   tDiff = [ h1_deltaT.GetMean(), h1_deltaT.GetMeanError()]
+   if saveFit:
+       if  (os.path.isdir(outdir + "/fits") == False ): os.system('mkdir %s/fits/'%outdir)
+
+       h1_deltaT.Draw("same histo")
+       c.Update()
+       c.SaveAs("%s/fits/%s_refbar%02d.png"%(outdir, gname, refbar))
+
+   ROOT.gStyle.SetOptStat(0)
    return tDiff
 
 
@@ -111,6 +132,7 @@ parser.add_argument("-g",  "--gname",   required=True, type=str, help="Choose co
 parser.add_argument("-l",  "--label",   required=True, type=str, help="label in the form: HPK_2E14_C25_LYSO815_Vov1.50_T-30C, HPK_nonIrr_C25_LYSO813_Vov1.00_T-30C")
 parser.add_argument("-i",  "--inputFolder",  required=True, type=str, help="input folder")
 parser.add_argument("-o",  "--outFolder",   required=True, type=str, help="out folder")
+parser.add_argument( "--getMean",   action='store_true', help="Using histo mean instead of std gaussian fit")
 parser.add_argument( "--saveFit",   action='store_true', help="Saving fit of the tDiff")
 parser.add_argument( "--debug",   action='store_true', help="Debugging mode")
 args = parser.parse_args()
@@ -205,6 +227,24 @@ elif args.label == 'HPK_nonIrr_C25_LYSO818_Vov1.00_T5C':
   angle = 49 # Sept Module were at 49°
   offsetX = 0 
 
+elif args.label == 'HPK_nonIrr_C25_LYSO818_Vov1.00_angle64_T5C':
+  goodBars = { #NB here best th is 15 due to beam set up during data taking, other th not so good
+           #5: [0,  2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15],
+           #7: [0,  3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15],
+           #11: [0, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15],
+           15: [ 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 15],
+           #20: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15],
+           #25: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15]
+           }
+  vov = 1.00
+  refbarmin = 6
+  refbarmax = 12
+  cellsize = '25 #mum'
+  irradiation = 'non irradiated'
+  angle = 61 # Sept Modules have offset of 3
+  #offsetX = 5 #central bar
+  offsetX = 0 #central bar
+
 
 barConversionFact = 0.312 / math.cos(angle*math.pi/180) # [cm]
 
@@ -217,7 +257,6 @@ inputdir = args.inputFolder #'/afs/cern.ch/work/f/fcetorel/private/work2/dev_TB_
 #--- prepare outdir
 if (os.path.isdir(outdir) == False): 
     os.system('mkdir %s'%outdir)
-
 print (outdir)
 
 # Canvas things
@@ -225,6 +264,7 @@ hdummy = ROOT.TH2F('hdummy','',100,-30,30,1000,-1200,1500)
 hdummy.GetXaxis().SetTitle('Hodoscope x [cm]')
 hdummy.GetYaxis().SetTitle('#DeltaT [ps]')
 hdummy.GetXaxis().SetRangeUser(0, 6 )
+if "64" in label: hdummy.GetXaxis().SetRangeUser(2, 8 )
 hdummy.GetYaxis().SetRangeUser(-1100, 1400 )
 
 latex = ROOT.TLatex(0.65,0.84,'%s'%(irradiation))
@@ -235,12 +275,13 @@ latex.SetTextFont(42)
 c = ROOT.TCanvas("","",600,500)
 #outfile   = ROOT.TFile.Open(outdir+'/uniformityCheck_%s.root'%label,'recreate')
 gVsTh = ROOT.TGraphErrors()
+gVsBar = {}
 graphname = args.gname
 print ('Doing ', graphname)
 
 for refth, goodbars in goodBars.items():
     print ("Now ref th is %02d, and these are the good DUT bars: "%refth, goodbars)
-
+    gVsBar[refth] = ROOT.TGraphErrors ()
     g_tDiff_vs_x = OrderedDict()
     for bar in goodbars:
         g_tDiff_vs_x [bar] = ROOT.TGraphErrors()
@@ -262,7 +303,12 @@ for refth, goodbars in goodBars.items():
             if h1_deltaT == None: 
                 print ("%s not found"%gnameComplete)
                 continue
-            tDiff = getDiff( h1_deltaT, args.saveFit, outdir, gnameComplete)
+
+            if args.getMean: #using average of the deltaT histo
+                tDiff = getDiffMeanHisto( h1_deltaT, args.saveFit, outdir, gnameComplete, refbar)
+            else:    #or the mean value of the gaussian fit
+                tDiff = getDiff( h1_deltaT, args.saveFit, outdir, gnameComplete, refbar)
+
             gDiff.SetPoint(gDiff.GetN(), (refbar-offsetX)*barConversionFact, tDiff[0])
             gDiff.SetPointError(gDiff.GetN()-1, 0, tDiff[1])
             
@@ -304,7 +350,7 @@ for refth, goodbars in goodBars.items():
         g.SetLineWidth(1)
         g.Draw('p same')
         
-        g.Fit(lin, "QNR")
+        g.Fit(lin, "QR")
     
         lin.SetLineStyle(2)
         lin.SetLineColor(ROOT.kBlue+1)
@@ -331,6 +377,7 @@ for refth, goodbars in goodBars.items():
         leg.Draw("same")
      
         hSummary.Fill(lin.GetParameter(1))
+        gVsBar[refth].SetPoint(gVsBar[refth].GetN(), bar, abs(lin.GetParameter(1)) )
     
     c2.SaveAs('%s/%s_refTh%02d.png'%(outdir,c2.GetName(), refth))
     c =  ROOT.TCanvas('LCSlope_summary_%s_refTh%02d'%(graphname, refth),'LCSlope_summary_%s_refTh%02d'%(graphname, refth),600,500)
@@ -351,12 +398,29 @@ for refth, goodbars in goodBars.items():
     gausF.Draw("same")
     text.Draw("same")
     c.SaveAs('%s/%s.png'%(outdir,c.GetName()))
+
     gVsTh.SetPoint(gVsTh.GetN(), refth, abs(gausF.GetParameter(1)))
     gVsTh.SetPointError(gVsTh.GetN()-1, 0, gausF.GetParError(1))
     if refth == 15:
     
         print ("Mean   --   RMS   -- entries --  errMean")
         print ("%.3f  --   %.3f   -- %.0f  --   %.3f"%(hSummary.GetMean(), hSummary.GetRMS(), hSummary.GetEntries() , hSummary.GetRMS()/math.sqrt(hSummary.GetEntries())))
+
+
+    c3 =  ROOT.TCanvas('slopeVsBar_%s_refTh%02d'%(graphname, refth),'slopeVsBar_%s_refTh%02d'%(graphname, refth),600,500)
+    c3.Clear()
+    c3.cd()
+    hdummyBar = ROOT.TH2F("", "", 200, -100, 100, 500, -250, 250 )
+    hdummyBar.SetTitle("; bar ; Slope tDiff VS x [ps/cm]  ")
+    hdummyBar.GetXaxis().SetRangeUser(-0.5,15.5)
+    hdummyBar.GetYaxis().SetRangeUser(120,250)
+    hdummyBar.Draw()
+    gVsBar[refth].SetMarkerStyle(21)
+    gVsBar[refth].Draw("pl same")
+    pol0_vsBar = ROOT.TF1("pol0bar", "pol0", -0.5, 15.5)
+    gVsBar[refth].Fit(pol0_vsBar, "R")
+
+    c3.SaveAs('%s/%s.png'%(outdir, c3.GetName()))
 
 
 c.Clear()
