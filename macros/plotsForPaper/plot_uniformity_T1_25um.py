@@ -62,11 +62,15 @@ if (comparison == 'tRes_nonIrrVov3p5'):
                100056 : 'HPK 25 μm T2 2E+14',
               }
     
+    #plotAttrs = { 
+    #              818 : [20, ROOT.kGreen+2, 'non irradiated, V_{OV} = 3.50 V'],
+    #              100056 : [22, ROOT.kOrange+1,  '2 #times 10^{14} 1 MeV n_{eq}/cm^{2}, V_{OV} = 0.96 V'],
+    #            }
     plotAttrs = { 
-                  818 : [20, ROOT.kGreen+2, 'non irradiated, V_{OV} = 3.50 V'],
-                  100056 : [22, ROOT.kOrange+1,  '2 #times 10^{14} 1 MeV n_{eq}/cm^{2}, V_{OV} = 0.96 V'],
+                  818 : [20, ROOT.kGreen+2, 'non-irradiated'],
+                  100056 : [22, ROOT.kOrange+1,  '2 #times 10^{14} 1 MeV n_{eq}/cm^{2}'],
                 }
- 
+
 
 if (comparison == 'tRes'): 
 
@@ -84,11 +88,15 @@ if (comparison == 'tRes'):
                100056 : 'HPK 25 μm T2 2E+14',
               }
     
+    #plotAttrs = { 
+    #              818 : [20, ROOT.kBlue, 'non irradiated, V_{OV} = 1.00 V'],
+    #              100056 : [22, ROOT.kOrange+1,  '2 #times 10^{14} 1 MeV n_{eq}/cm^{2}, V_{OV} = 0.96 V'],
+    #            }
     plotAttrs = { 
-                  818 : [20, ROOT.kBlue, 'non irradiated, V_{OV} = 1.00 V'],
+                  818 : [20, ROOT.kBlue, 'non-irradiated'],
                   100056 : [22, ROOT.kOrange+1,  '2 #times 10^{14} 1 MeV n_{eq}/cm^{2}, V_{OV} = 0.96 V'],
                 }
- 
+
 if (comparison == 'energy'):  
 
     SiPM = 'HPK, 25 #mum'
@@ -155,7 +163,7 @@ for key,gname in gnames.items():
     g[key].SetName(gname + "_" + str(key))
 
     g_mm[key] = ROOT.TGraphErrors() # to conver x-axis in mm
-    for i in range(0,g[key].GetN()+1):
+    for i in range(g[key].GetN()):
         g_mm[key].SetPoint(g_mm[key].GetN(),(g[key].GetPointX(i)-offset)*barConversionFact, g[key].GetPointY(i)/enScale) #accounting for angle offset
         g_mm[key].SetPointError(g_mm[key].GetN()-1, 0, g[key].GetErrorY(i)/enScale )
 
@@ -237,12 +245,12 @@ xaxis2.SetLabelFont(42)
 
 
 leg.Draw("same")
-tl2 = ROOT.TLatex()
-tl2.SetNDC()
-tl2.SetTextFont(42)
-tl2.SetTextSize(0.045)
-if 'tRes' in comparison: tl2.DrawLatex(0.20,0.18,SiPM)
-else: tl2.DrawLatex(0.20,0.85,SiPM)
+#tl2 = ROOT.TLatex()
+#tl2.SetNDC()
+#tl2.SetTextFont(42)
+#tl2.SetTextSize(0.045)
+#if 'tRes' in comparison: tl2.DrawLatex(0.20,0.18,SiPM)
+#else: tl2.DrawLatex(0.20,0.85,SiPM)
 
 tl = ROOT.TLatex()
 tl.SetNDC()
@@ -257,6 +265,34 @@ tl.DrawLatex(0.20,0.79,irradiation)
 c1.SaveAs(outdir+'%s.png'%c1.GetName())
 c1.SaveAs(outdir+'%s.pdf'%c1.GetName())
 c1.SaveAs(outdir+'%s.C'%c1.GetName())
+
+#### with a pol0 fit to check consistency of tRefs numbers 
+pol0_noirr = ROOT.TF1("noirr", "pol0", -0.5*barConversionFact, 15.5*barConversionFact)
+pol0_irr = ROOT.TF1("irr", "pol0", -0.5*barConversionFact, 15.5*barConversionFact)
+
+g_mm[818].Fit(pol0_noirr, "R")
+pol0_noirr.SetLineColor(g[818].GetLineColor())
+t1 = ROOT.TLatex()
+t1.SetNDC()
+t1.SetTextFont(42)
+t1.SetTextSize(0.045)
+t1.DrawLatex(0.20,0.35,"p_0 non irr: %.2f #pm %.2f"%(pol0_noirr.GetParameter(0), pol0_noirr.GetParError(0)))
+pol0_noirr.Draw("same")
+
+g_mm[100056].Fit(pol0_irr, "R")
+pol0_irr.SetLineColor(g[100056].GetLineColor())
+t2 = ROOT.TLatex()
+t2.SetNDC()
+t2.SetTextFont(42)
+t2.SetTextSize(0.045)
+t2.DrawLatex(0.20,0.55,"p_0 2E14: %.2f #pm %.2f"%(pol0_irr.GetParameter(0), pol0_irr.GetParError(0)))
+pol0_irr.Draw("same")
+
+
+c1.SaveAs(outdir+'%s_fit.png'%c1.GetName())
+c1.SaveAs(outdir+'%s_fit.pdf'%c1.GetName())
+c1.SaveAs(outdir+'%s_fit.C'%c1.GetName())
+
 
 
 

@@ -17,7 +17,7 @@ from utils import *
 #set the tdr style
 tdrstyle.setTDRStyle()
 ROOT.gStyle.SetOptStat(0)
-ROOT.gStyle.SetOptFit(0)
+ROOT.gStyle.SetOptFit(1)
 ROOT.gStyle.SetOptTitle(0)
 ROOT.gStyle.SetLabelSize(0.052,'X') #0.055 before
 ROOT.gStyle.SetLabelSize(0.052,'Y')
@@ -35,8 +35,8 @@ ROOT.gErrorIgnoreLevel = ROOT.kWarning
 
 colors = {
         'HPK_nonIrr_C25_LYSO818_Vov1.00_T5C' : ROOT.kBlue,  
-        'HPK_nonIrr_C25_LYSO818_Vov3.50_T5C' : ROOT.kGreen + 2 , 
-        'HPK_2E14_LYSO100056_T-35C' : ROOT.kOrange + 1 , 
+        'HPK_nonIrr_C25_LYSO818_Vov3.50_T5C' : ROOT.kGreen + 2, 
+        'HPK_2E14_LYSO100056_T-35C' : ROOT.kOrange + 1, 
 
         }
 
@@ -79,16 +79,11 @@ Vovs = {
 }
 
 bestVovs = { 
-
              'HPK_nonIrr_C25_LYSO818_Vov1.00_T5C' : 1.00,
              'HPK_nonIrr_C25_LYSO818_Vov3.50_T5C' : 3.50,
              'HPK_2E14_LYSO100056_T-35C' : 1.50,
-
           }
 
-h = {}
-h_all = ROOT.TH1F('h_all','h_all', 40, -0.8,0.8)
-h_irr = ROOT.TH1F('h_irr','h_irr', 40, -0.8,0.8)
 
 if '3.5' in modules[0] or '3.5' in modules[1]:
     c = ROOT.TCanvas('c_timeResolution_vs_bar_nonIrrVov3p5','c_timeResolution_vs_bar_nonIrrVov3p5', 600, 500)
@@ -101,7 +96,6 @@ hPad = ROOT.TH2F('hPad','', 100, padXmin, padXmax, 100, 0, 120)
 hPad.SetTitle("; y [mm]; time resolution [ps]")
 hPad.Draw()
 c.SetGridy()
-#c.SetTicks()
 c.SetTicky(1)
 c.SetTickx(0)
 
@@ -122,48 +116,65 @@ xaxis2.SetTitleFont(42)
 xaxis2.SetLabelFont(42)
 
 
+h = {}
 g_mm = {}
+
 for mod in modules:
+
+   #h [mod] = ROOT.TH1F()
    f = ROOT.TFile.Open(fnames[mod])
    g_mm[mod]= ROOT.TGraphErrors()   
-#   c = ROOT.TCanvas('c_timeResolution_vs_bar_%s'%mod,'c_timeResolution_vs_bar_%s'%mod, 600, 500)
-#   hPad = ROOT.TH2F('hPad','', 100, -0.5, 15.5, 100, 0, 120)
-#   hPad.SetTitle("; bar; time resolution [ps]")
-#   hPad.Draw()
-#   c.SetGridy()
-#   c.SetTicks()
-#
-#   leg = ROOT.TLegend(0.65, 0.66, 0.95, 0.92)
-#   leg.SetBorderSize(0)
-#   leg.SetFillStyle(0)
-#   if (len(Vovs[mod])>4):
-#      leg.SetNColumns(2);
-#      leg.SetColumnSeparation(0.2);
 
    for iv,vov in enumerate(Vovs[mod]):
          
       g = f.Get('g_deltaT_totRatioCorr_bestTh_vs_bar_Vov%.2f_enBin01'%vov) 
       print('g_deltaT_totRatioCorr_bestTh_vs_bar_Vov%.2f_enBin01'%vov)
       print(g.GetN())
-      #g.Scale(1./enScale)
 
-      for i in range(0,g.GetN()+1): #conversion in mm
+      for i in range(g.GetN()): #conversion in mm
           g_mm[mod].SetPoint(g_mm[mod].GetN(), g.GetPointX(i)*barConversionFact, g.GetPointY(i)/enScale) #accounting for angle offset
           g_mm[mod].SetPointError(g_mm[mod].GetN()-1, 0, g.GetErrorY(i)/enScale )
 
 
-      
-      #if (vov == bestVovs[mod]): 
-      #   h[mod] = ROOT. TH1F('h_%s'%mod,'h_%s'%mod, 40, -0.8,0.8 )
-      #   h[mod].SetLineColor(g.GetLineColor())
-      #   h[mod].SetFillColorAlpha(g.GetLineColor(),0.2)
-      #   for i in range(0,g.GetN()):
-      #      x = (g.GetPointY(i) - g.GetMean(2) )/g.GetMean(2)
-      #      h[mod].Fill(x)
-      #      h_all.Fill(x)
-      #      if ('nonIrr' not in mod):
-      #         h_irr.Fill(x)
+      #histogram for spread
+      if (vov == bestVovs[mod]): 
+          hdummy = ROOT.TH1F('h_%s'%mod,'h_%s'%mod, 60, -0.8,0.8 )
+          #print (mod)
+          #pol0= ROOT.TF1(mod, "pol0", -0.5*barConversionFact, 15.5*barConversionFact)
+          #g_mm[mod].Fit(pol0, "R")
+          for i in range(g_mm[mod].GetN()):
+             #x = ( g_mm[mod].GetPointY(i) - pol0.GetParameter(0) )/pol0.GetParameter(0)
+             x = ( g_mm[mod].GetPointY(i) - g_mm[mod].GetMean(2) ) / g_mm[mod].GetMean(2)
+             hdummy.Fill(x)
+             #print (i, " ", g_mm[mod].GetPointY(i),  " ", g_mm[mod].GetMean(2) , " ",  x)
+             #print (i, " ", g_mm[mod].GetPointY(i),  " ", pol0.GetParameter(0) , " ",  x)
+          hdummy.SetLineColor(g_mm[mod].GetLineColor())
+          hdummy.SetFillColorAlpha(g_mm[mod].GetLineColor(),0.2)
 
+          #Finally the spread resolution plot
+          c2 = ROOT.TCanvas('c_spread_%s'%mod,'c_spread_%s'%mod, 600, 500)
+          c2.cd()
+          c2.Update()
+          hdummy.Draw("")
+
+          hdummy.GetXaxis().SetTitle("(#sigma_{t} - <#sigma_{t}>) / <#sigma_{t}>  ")
+          tx = ROOT.TLatex()
+          tx.SetNDC()
+          tx.SetTextFont(42)
+          tx.SetTextSize(0.045)
+          tx.DrawLatex(0.7, 0.8, "RMS : %.3f "%(hdummy.GetRMS()))
+
+          
+          c2.SaveAs(outdir+'%s.png'%c2.GetName())
+          c2.SaveAs(outdir+'%s.pdf'%c2.GetName())
+          c2.SaveAs(outdir+'%s.C'%c2.GetName())
+
+
+ 
+      c.cd()
+      ROOT.gStyle.SetOptStat(0)
+      ROOT.gStyle.SetOptFit(0)
+ 
       #g.SetMarkerStyle(20+iv)
       g_mm[mod].SetMarkerStyle(20+iv)
       g_mm[mod].SetMarkerColor(colors[mod])
@@ -176,16 +187,17 @@ for mod in modules:
       ovEff = vov
       if ('2E14' in mod or '1E14' in mod or '1E13' in mod):
          ovEff = getVovEffDCR(data, mod, ('%.02f'%vov))[0]
-      leg.AddEntry(g_mm[mod], '%s, V_{OV} = %.2f V'%(labels[mod],ovEff), 'PL') 
+      #leg.AddEntry(g_mm[mod], '%s, V_{OV} = %.2f V'%(labels[mod],ovEff), 'PL') 
+      leg.AddEntry(g_mm[mod], '%s'%(labels[mod]), 'PL') 
 
    leg.Draw()
    
    
-   latex = ROOT.TLatex(0.20,0.18,'HPK, 25 #mum')
-   latex.SetNDC()
-   latex.SetTextSize(0.045)
-   latex.SetTextFont(42)
-   latex.Draw()
+   #latex = ROOT.TLatex(0.20,0.18,'HPK, 25 #mum')
+   #latex.SetNDC()
+   #latex.SetTextSize(0.045)
+   #latex.SetTextFont(42)
+   #latex.Draw()
 
    #cms_logo = draw_logo()
    #cms_logo.Draw()
@@ -194,6 +206,29 @@ leg.Draw()
 c.SaveAs(outdir+'%s.png'%c.GetName())
 c.SaveAs(outdir+'%s.pdf'%c.GetName())
 c.SaveAs(outdir+'%s.C'%c.GetName())
+
+c.cd()
+#### with a pol0 fit to check consistency of tRefs numbers
+for i, mod in enumerate(modules):
+
+    pol0= ROOT.TF1(mod, "pol0", -0.5*barConversionFact, 15.5*barConversionFact)
+
+    g_mm[mod].Fit(pol0, "R")
+    pol0.SetLineColor(g_mm[mod].GetLineColor())
+    t1 = ROOT.TLatex()
+    t1.SetNDC()
+    t1.SetTextFont(42)
+    t1.SetTextSize(0.045)
+    t1.DrawLatex(0.17, 0.32 + i * 0.2,"%s: %.2f #pm %.2f"%(mod, pol0.GetParameter(0), pol0.GetParError(0)))
+    pol0.Draw("same")
+
+
+c.SaveAs(outdir+'%s_fit.png'%c.GetName())
+c.SaveAs(outdir+'%s_fit.pdf'%c.GetName())
+c.SaveAs(outdir+'%s_fit.C'%c.GetName())
+
+
+
 hPad.Delete()
 
-  
+   
