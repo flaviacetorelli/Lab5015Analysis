@@ -21,14 +21,15 @@ ROOT.gStyle.SetOptFit(1)
 ROOT.gStyle.SetOptTitle(0)
 ROOT.gStyle.SetLabelSize(0.052,'X') #0.055 before
 ROOT.gStyle.SetLabelSize(0.052,'Y')
-ROOT.gStyle.SetTitleSize(0.06,'X') #0.07 before
-ROOT.gStyle.SetTitleSize(0.06,'Y')
-ROOT.gStyle.SetTitleOffset(1.05,'X')
+ROOT.gStyle.SetTitleSize(0.066,'X') #0.07 before
+ROOT.gStyle.SetTitleSize(0.067,'Y')
+ROOT.gStyle.SetTitleOffset(0.95,'X')
 ROOT.gStyle.SetTitleOffset(1.1,'Y')
 ROOT.gStyle.SetLegendFont(42)
-ROOT.gStyle.SetLegendTextSize(0.044) #0.045 before
+ROOT.gStyle.SetLegendTextSize(0.05) 
 ROOT.gStyle.SetPadBottomMargin(0.13)
 ROOT.gStyle.SetPadTopMargin(0.13)
+ROOT.gStyle.SetPadRightMargin(0.05)
 ROOT.gROOT.SetBatch(True)
 ROOT.gErrorIgnoreLevel = ROOT.kWarning
 
@@ -100,7 +101,7 @@ c.SetTicky(1)
 c.SetTickx(0)
 
 
-leg = ROOT.TLegend(0.20, 0.745, 0.50, 0.855)
+leg = ROOT.TLegend(0.20, 0.66, 0.50, 0.84)
 leg.SetBorderSize(0)
 leg.SetFillStyle(0)
 
