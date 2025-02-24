@@ -26,14 +26,14 @@ ROOT.gStyle.SetTitleSize(0.06,'Y')
 ROOT.gStyle.SetTitleOffset(1.05,'X')
 ROOT.gStyle.SetTitleOffset(1.1,'Y')
 ROOT.gStyle.SetLegendFont(42)
-ROOT.gStyle.SetLegendTextSize(0.045)
+ROOT.gStyle.SetLegendTextSize(0.044) #0.045 before
 ROOT.gStyle.SetPadBottomMargin(0.13)
 ROOT.gStyle.SetPadTopMargin(0.13)
 ROOT.gROOT.SetBatch(True)
 ROOT.gErrorIgnoreLevel = ROOT.kWarning
 
 
-outdir = '/eos/user/f/fcetorel/www/MTD/plot4BTLpaper/uniformity/paper1_Nov24//'
+outdir = '/eos/user/f/fcetorel/www/MTD/plot4BTLpaper/uniformity/paper1_Feb25/'
 
 #comparison = 'tRes'
 comparison = 'tRes_nonIrrVov3p5'
@@ -68,7 +68,7 @@ if (comparison == 'tRes_nonIrrVov3p5'):
     #            }
     plotAttrs = { 
                   818 : [20, ROOT.kGreen+2, 'non-irradiated'],
-                  100056 : [22, ROOT.kOrange+1,  '2 #times 10^{14} 1 MeV n_{eq}/cm^{2}'],
+                  100056 : [22, ROOT.kOrange+1,  '2 #times 10^{14} n_{eq}/cm^{2}'],
                 }
 
 
@@ -94,7 +94,7 @@ if (comparison == 'tRes'):
     #            }
     plotAttrs = { 
                   818 : [20, ROOT.kBlue, 'non-irradiated'],
-                  100056 : [22, ROOT.kOrange+1,  '2 #times 10^{14} 1 MeV n_{eq}/cm^{2}, V_{OV} = 0.96 V'],
+                  100056 : [22, ROOT.kOrange+1,  '2 #times 10^{14} n_{eq}/cm^{2}'],
                 }
 
 if (comparison == 'energy'):  
@@ -131,7 +131,7 @@ f = {}
 
 c = ROOT.TCanvas('c_%s_barUniformity'%comparison, 'c_%s_barUniformity'%comparison,  600, 500)
 if 'tRes' in comparison:
-    leg = ROOT.TLegend(0.20, 0.73, 0.50, 0.85)
+    leg = ROOT.TLegend(0.20, 0.745, 0.50, 0.855)
     hPad = ROOT.gPad.DrawFrame(-0.5,0.,15.5, 120)
     hPad.SetTitle("; reference bar; time resolution [ps]")
 else:

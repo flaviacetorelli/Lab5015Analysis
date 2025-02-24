@@ -26,7 +26,7 @@ ROOT.gStyle.SetTitleSize(0.06,'Y')
 ROOT.gStyle.SetTitleOffset(1.05,'X')
 ROOT.gStyle.SetTitleOffset(1.1,'Y')
 ROOT.gStyle.SetLegendFont(42)
-ROOT.gStyle.SetLegendTextSize(0.045)
+ROOT.gStyle.SetLegendTextSize(0.044) #0.045 before
 ROOT.gStyle.SetPadBottomMargin(0.13)
 ROOT.gStyle.SetPadTopMargin(0.13)
 ROOT.gROOT.SetBatch(True)
@@ -53,7 +53,7 @@ with open('/eos/cms/store/group/dpg_mtd/comm_mtd/TB/MTDTB_H8_Sep2023/VovsEff_TOF
 
 
 inputdir = '/eos/user/f/fcetorel/www/MTD/TBSept23/TOFHIR2C/ModuleCharacterization/'
-outdir   = '/eos/user/f/fcetorel/www/MTD/plot4BTLpaper/moduleUniformity/paper1_Nov24/'
+outdir   = '/eos/user/f/fcetorel/www/MTD/plot4BTLpaper/moduleUniformity/paper1_Feb25/'
 
 #modules = ['HPK_nonIrr_C25_LYSO818_Vov1.00_T5C', 'HPK_2E14_LYSO100056_T-35C']
 #modules = {'HPK_nonIrr_C25_LYSO818_Vov1.00_T5C','HPK_nonIrr_C25_LYSO818_Vov3.50_T5C', 'HPK_2E14_LYSO100056_T-35C'}
@@ -68,7 +68,7 @@ fnames = {
 labels = {
           'HPK_nonIrr_C25_LYSO818_Vov1.00_T5C' : 'non irradiated',
           'HPK_nonIrr_C25_LYSO818_Vov3.50_T5C' : 'non-irradiated',
-          'HPK_2E14_LYSO100056_T-35C' : '2 x 10^{14} 1 MeV n_{eq}/cm^{2}',
+          'HPK_2E14_LYSO100056_T-35C' : '2 x 10^{14} n_{eq}/cm^{2}',
      }
 
 
@@ -100,7 +100,7 @@ c.SetTicky(1)
 c.SetTickx(0)
 
 
-leg = ROOT.TLegend(0.20, 0.73, 0.50, 0.85)
+leg = ROOT.TLegend(0.20, 0.745, 0.50, 0.855)
 leg.SetBorderSize(0)
 leg.SetFillStyle(0)
 
@@ -229,6 +229,6 @@ c.SaveAs(outdir+'%s_fit.C'%c.GetName())
 
 
 
-hPad.Delete()
+#hPad.Delete()
 
    
