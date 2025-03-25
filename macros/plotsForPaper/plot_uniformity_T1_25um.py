@@ -221,7 +221,7 @@ c1.SetGridy()
 hPad1.Draw()
 #ROOT.gPad.SetTicks(1)
 ROOT.gPad.SetTicky(1)
-ROOT.gPad.SetTickx(0)
+ROOT.gPad.SetTickx(1)
 
 
  

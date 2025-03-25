@@ -98,7 +98,7 @@ hPad.SetTitle("; y [mm]; time resolution [ps]")
 hPad.Draw()
 c.SetGridy()
 c.SetTicky(1)
-c.SetTickx(0)
+c.SetTickx(1)
 
 
 leg = ROOT.TLegend(0.20, 0.72, 0.50, 0.9)
