@@ -19,17 +19,17 @@ tdrstyle.setTDRStyle()
 ROOT.gStyle.SetOptStat(0)
 ROOT.gStyle.SetOptFit(1)
 ROOT.gStyle.SetOptTitle(0)
-ROOT.gStyle.SetLabelSize(0.052,'X') #0.055 before
+ROOT.gStyle.SetLabelSize(0.055,'X') #0.052
 ROOT.gStyle.SetLabelSize(0.052,'Y')
-ROOT.gStyle.SetTitleSize(0.066,'X') #0.07 before
-ROOT.gStyle.SetTitleSize(0.067,'Y')
-ROOT.gStyle.SetTitleOffset(0.95,'X')
+ROOT.gStyle.SetTitleSize(0.07,'X') #0.067
+ROOT.gStyle.SetTitleSize(0.07,'Y')
+ROOT.gStyle.SetTitleOffset(1.05,'X') # 0.95
 ROOT.gStyle.SetTitleOffset(1.1,'Y')
 ROOT.gStyle.SetLegendFont(42)
 ROOT.gStyle.SetLegendTextSize(0.05) 
-ROOT.gStyle.SetPadBottomMargin(0.13)
-ROOT.gStyle.SetPadTopMargin(0.13)
-ROOT.gStyle.SetPadRightMargin(0.05)
+#ROOT.gStyle.SetPadBottomMargin(0.13)
+ROOT.gStyle.SetPadTopMargin(0.07) #0.13
+#ROOT.gStyle.SetPadRightMargin(0.05)
 ROOT.gROOT.SetBatch(True)
 ROOT.gErrorIgnoreLevel = ROOT.kWarning
 
@@ -54,7 +54,7 @@ with open('/eos/cms/store/group/dpg_mtd/comm_mtd/TB/MTDTB_H8_Sep2023/VovsEff_TOF
 
 
 inputdir = '/eos/user/f/fcetorel/www/MTD/TBSept23/TOFHIR2C/ModuleCharacterization/'
-outdir   = '/eos/user/f/fcetorel/www/MTD/plot4BTLpaper/moduleUniformity/paper1_Feb25/'
+outdir   = '/eos/user/f/fcetorel/www/MTD/plot4BTLpaper/moduleUniformity/paper1_Mar25/'
 
 #modules = ['HPK_nonIrr_C25_LYSO818_Vov1.00_T5C', 'HPK_2E14_LYSO100056_T-35C']
 #modules = {'HPK_nonIrr_C25_LYSO818_Vov1.00_T5C','HPK_nonIrr_C25_LYSO818_Vov3.50_T5C', 'HPK_2E14_LYSO100056_T-35C'}
@@ -101,20 +101,20 @@ c.SetTicky(1)
 c.SetTickx(0)
 
 
-leg = ROOT.TLegend(0.20, 0.66, 0.50, 0.84)
+leg = ROOT.TLegend(0.20, 0.72, 0.50, 0.9)
 leg.SetBorderSize(0)
 leg.SetFillStyle(0)
 
 # second axis with bar number
-f1 = ROOT.TF1("f1","x", padXmin/barConversionFact , padXmax/barConversionFact);
-xaxis2 = ROOT.TGaxis(padXmin, 120 , padXmax, 120,"f1",512,"-")
-xaxis2.SetTitle("DUT bar")
-xaxis2.Draw("same")
-xaxis2.SetLabelSize(0.052)
-xaxis2.SetTitleSize(0.06)
-xaxis2.SetTitleOffset(1.05)
-xaxis2.SetTitleFont(42)
-xaxis2.SetLabelFont(42)
+#f1 = ROOT.TF1("f1","x", padXmin/barConversionFact , padXmax/barConversionFact);
+#xaxis2 = ROOT.TGaxis(padXmin, 120 , padXmax, 120,"f1",512,"-")
+#xaxis2.SetTitle("DUT bar")
+#xaxis2.Draw("same")
+#xaxis2.SetLabelSize(0.052)
+#xaxis2.SetTitleSize(0.06)
+#xaxis2.SetTitleOffset(1.05)
+#xaxis2.SetTitleFont(42)
+#xaxis2.SetLabelFont(42)
 
 
 h = {}
@@ -140,11 +140,10 @@ for mod in modules:
       #histogram for spread
       if (vov == bestVovs[mod]): 
           hdummy = ROOT.TH1F('h_%s'%mod,'h_%s'%mod, 60, -0.8,0.8 )
-          #print (mod)
-          #pol0= ROOT.TF1(mod, "pol0", -0.5*barConversionFact, 15.5*barConversionFact)
-          #g_mm[mod].Fit(pol0, "R")
+          #goodbars = [2,3,4,5,6,7,8,9,10,11,12,13,14,15]
+          #for i in goodbars:
+
           for i in range(g_mm[mod].GetN()):
-             #x = ( g_mm[mod].GetPointY(i) - pol0.GetParameter(0) )/pol0.GetParameter(0)
              x = ( g_mm[mod].GetPointY(i) - g_mm[mod].GetMean(2) ) / g_mm[mod].GetMean(2)
              hdummy.Fill(x)
              #print (i, " ", g_mm[mod].GetPointY(i),  " ", g_mm[mod].GetMean(2) , " ",  x)
@@ -167,8 +166,8 @@ for mod in modules:
 
           
           c2.SaveAs(outdir+'%s.png'%c2.GetName())
-          c2.SaveAs(outdir+'%s.pdf'%c2.GetName())
-          c2.SaveAs(outdir+'%s.C'%c2.GetName())
+          #c2.SaveAs(outdir+'%s.pdf'%c2.GetName())
+          #c2.SaveAs(outdir+'%s.C'%c2.GetName())
 
 
  

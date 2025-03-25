@@ -19,23 +19,24 @@ tdrstyle.setTDRStyle()
 ROOT.gStyle.SetOptStat(0)
 ROOT.gStyle.SetOptFit(1)
 ROOT.gStyle.SetOptTitle(0)
-ROOT.gStyle.SetLabelSize(0.052,'X') #0.055 before
+ROOT.gStyle.SetLabelSize(0.055,'X') #0.052
 ROOT.gStyle.SetLabelSize(0.052,'Y')
-ROOT.gStyle.SetTitleSize(0.066,'X') #0.07 before
-ROOT.gStyle.SetTitleSize(0.067,'Y')
-ROOT.gStyle.SetTitleOffset(0.95,'X')
+ROOT.gStyle.SetTitleSize(0.07,'X') #0.067
+ROOT.gStyle.SetTitleSize(0.07,'Y')
+ROOT.gStyle.SetTitleOffset(1.05,'X') # 0.95
 ROOT.gStyle.SetTitleOffset(1.1,'Y')
 ROOT.gStyle.SetLegendFont(42)
 ROOT.gStyle.SetLegendTextSize(0.05) 
-ROOT.gStyle.SetPadBottomMargin(0.13)
-ROOT.gStyle.SetPadTopMargin(0.13)
-ROOT.gStyle.SetPadRightMargin(0.05)
+#ROOT.gStyle.SetPadBottomMargin(0.13)
+ROOT.gStyle.SetPadTopMargin(0.07) #0.13
+#ROOT.gStyle.SetPadRightMargin(0.05)
 ROOT.gROOT.SetBatch(True)
 ROOT.gErrorIgnoreLevel = ROOT.kWarning
 
 
 
-outdir = '/eos/user/f/fcetorel/www/MTD/plot4BTLpaper/uniformity/paper1_Feb25/'
+
+outdir = '/eos/user/f/fcetorel/www/MTD/plot4BTLpaper/uniformity/paper1_Mar25/'
 
 #comparison = 'tRes'
 comparison = 'tRes_nonIrrVov3p5'
@@ -133,7 +134,7 @@ f = {}
 
 c = ROOT.TCanvas('c_%s_barUniformity'%comparison, 'c_%s_barUniformity'%comparison,  600, 500)
 if 'tRes' in comparison:
-    leg = ROOT.TLegend(0.20, 0.66, 0.50, 0.84)
+    leg = ROOT.TLegend(0.20, 0.72, 0.50, 0.9)
     hPad = ROOT.gPad.DrawFrame(-0.5,0.,15.5, 120)
     hPad.SetTitle("; reference bar; time resolution [ps]")
 else:
@@ -235,15 +236,15 @@ for key,gname in gnames.items():
  
 
 #### new ax with bar info
-f1 = ROOT.TF1("f1","x",-0.5 ,15.5);
-xaxis2 = ROOT.TGaxis(-0.5*barConversionFact, 120 , 15.5*barConversionFact, 120,"f1",512,"-")
-xaxis2.SetTitle("reference module bar")
-xaxis2.Draw("same")
-xaxis2.SetLabelSize(0.052)
-xaxis2.SetTitleSize(0.06)
-xaxis2.SetTitleOffset(1.05)
-xaxis2.SetTitleFont(42)
-xaxis2.SetLabelFont(42)
+#f1 = ROOT.TF1("f1","x",-0.5 ,15.5);
+#xaxis2 = ROOT.TGaxis(-0.5*barConversionFact, 120 , 15.5*barConversionFact, 120,"f1",512,"-")
+#xaxis2.SetTitle("reference module bar")
+#xaxis2.Draw("same")
+#xaxis2.SetLabelSize(0.052)
+#xaxis2.SetTitleSize(0.06)
+#xaxis2.SetTitleOffset(1.05)
+#xaxis2.SetTitleFont(42)
+#xaxis2.SetLabelFont(42)
 
 
 leg.Draw("same")
