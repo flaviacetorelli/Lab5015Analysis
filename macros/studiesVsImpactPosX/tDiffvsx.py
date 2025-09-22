@@ -182,10 +182,10 @@ elif args.label == 'HPK_2E14_C25_LYSO100056_Vov1.50_T-35C':
   goodBars = {
            #5: [0,1, 2, 3, 4, 5,  6, 7, 8, 9, 10, 11, 12, 13, 14, 15], not particularly good
            #7: [0,1, 2, 3, 4, 5,  6, 7, 8, 9, 10, 11, 12, 13, 14, 15], only few bars have good MIP peak
-           11: [0,1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15],
+           #11: [0,1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15],
            15: [0,1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15],
-           20: [0,1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15],
-           25: [0, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 15]
+           #20: [0,1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15],
+           #25: [0, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 15]
            }
   vov = 1.50
   refbarmin = 4
@@ -199,8 +199,8 @@ elif args.label == 'HPK_2E14_C25_LYSO100056_Vov1.50_T-35C':
 elif args.label == 'HPK_nonIrr_C25_LYSO818_Vov3.50_T5C':
   goodBars = {
            15: [0,1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15],
-           20: [0,1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15],
-           25: [0,1, 2, 3, 4, 5,  7, 8, 9,  11, 12, 13, 15],
+           #20: [0,1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15],
+           #25: [0,1, 2, 3, 4, 5,  7, 8, 9,  11, 12, 13, 15],
            }
   vov = 3.50
   refbarmin = 5
@@ -212,12 +212,12 @@ elif args.label == 'HPK_nonIrr_C25_LYSO818_Vov3.50_T5C':
 
 elif args.label == 'HPK_nonIrr_C25_LYSO818_Vov1.00_T5C':
   goodBars = {
-           5: [0,1, 2, 3, 4, 5, 7, 8, 9, 10, 11, 12, 13, 14, 15],
-           7: [0,1, 2, 3, 4, 5, 7, 8, 9, 10, 11, 12, 13, 14, 15],
-           11: [0,1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15],
+          # 5: [0,1, 2, 3, 4, 5, 7, 8, 9, 10, 11, 12, 13, 14, 15],
+          # 7: [0,1, 2, 3, 4, 5, 7, 8, 9, 10, 11, 12, 13, 14, 15],
+          # 11: [0,1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15],
            15: [0,1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15],
-           20: [0,1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15],
-           25: [0,1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15]
+          # 20: [0,1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15],
+          # 25: [0,1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15]
            }
   vov = 1.00
   refbarmin = 4
@@ -263,8 +263,9 @@ print (outdir)
 hdummy = ROOT.TH2F('hdummy','',100,-30,30,1000,-1200,1500)
 hdummy.GetXaxis().SetTitle('Hodoscope x [cm]')
 hdummy.GetYaxis().SetTitle('#DeltaT [ps]')
-hdummy.GetXaxis().SetRangeUser(0, 6 )
-if "64" in label: hdummy.GetXaxis().SetRangeUser(2, 8 )
+hdummy.GetXaxis().SetRangeUser(0., 6 )
+if "64" in label: 
+    hdummy.GetXaxis().SetRangeUser(2, 8 )
 hdummy.GetYaxis().SetRangeUser(-1100, 1400 )
 
 latex = ROOT.TLatex(0.65,0.84,'%s'%(irradiation))
@@ -279,10 +280,12 @@ gVsBar = {}
 graphname = args.gname
 print ('Doing ', graphname)
 
+c2 =  ROOT.TCanvas('c_%s_vs_x_all'%graphname,'c_%s_vs_x_all'%graphname,600,500)
 for refth, goodbars in goodBars.items():
     print ("Now ref th is %02d, and these are the good DUT bars: "%refth, goodbars)
     gVsBar[refth] = ROOT.TGraphErrors ()
     g_tDiff_vs_x = OrderedDict()
+    linFit_unc = []
     for bar in goodbars:
         g_tDiff_vs_x [bar] = ROOT.TGraphErrors()
     #print (g_tDiff_vs_x)
@@ -312,8 +315,7 @@ for refth, goodbars in goodBars.items():
             gDiff.SetPoint(gDiff.GetN(), (refbar-offsetX)*barConversionFact, tDiff[0])
             gDiff.SetPointError(gDiff.GetN()-1, 0, tDiff[1])
             
-    c1 =  ROOT.TCanvas('c_%s_vs_x_bar'%graphname,'c_%s_vs_x_bar'%graphname,600,500)
-    c2 =  ROOT.TCanvas('c_%s_vs_x_all'%graphname,'c_%s_vs_x_all'%graphname,600,500)
+    #c2 =  ROOT.TCanvas('c_%s_vs_x_all'%graphname,'c_%s_vs_x_all'%graphname,600,500)
     c2.cd()
     hdummy.Draw()
     
@@ -335,6 +337,8 @@ for refth, goodbars in goodBars.items():
         #g =  g_tDiff_vs_x [bar]
         #print ("DOING BAR %02d"%bar)
         #g.Print()
+
+        c1 =  ROOT.TCanvas('c_%s_vs_x_bar%02d_ref%02d'%(graphname,  bar, refth),'c_%s_vs_x_bar'%graphname,600,500)
         c1.Clear() 
         c1.SetGridy()
         c1.SetGridx()
@@ -350,13 +354,15 @@ for refth, goodbars in goodBars.items():
         g.SetLineWidth(1)
         g.Draw('p same')
         
-        g.Fit(lin, "QR")
-    
+        g.Fit(lin, "R")
+        #print ("This is linear fit unc for bar %02d: %f"%(bar,lin.GetParError(1)) )
+        linFit_unc.append(lin.GetParError(1))
         lin.SetLineStyle(2)
         lin.SetLineColor(ROOT.kBlue+1)
         lin.Draw("same")
     
-        c1.SaveAs('%s/%s%02d_ref%02d.png'%(outdir,c1.GetName(), bar, refth ))
+        c1.SaveAs('%s/%s.png'%(outdir,c1.GetName()))
+        #c1.SaveAs('%s/%s%02d_ref%02d.png'%(outdir,c1.GetName(), bar, refth ))
         #c1.SaveAs(outdir+c1.GetName()+'.pdf')
     
         # now all toghether
@@ -401,11 +407,15 @@ for refth, goodbars in goodBars.items():
 
     gVsTh.SetPoint(gVsTh.GetN(), refth, abs(gausF.GetParameter(1)))
     gVsTh.SetPointError(gVsTh.GetN()-1, 0, gausF.GetParError(1))
-    if refth == 15:
-    
+    if refth == 15: ## Values to put in the note
         print ("Mean   --   RMS   -- entries --  errMean")
         print ("%.3f  --   %.3f   -- %.0f  --   %.3f"%(hSummary.GetMean(), hSummary.GetRMS(), hSummary.GetEntries() , hSummary.GetRMS()/math.sqrt(hSummary.GetEntries())))
-
+        errMean = hSummary.GetRMS()/math.sqrt(hSummary.GetEntries())
+        print ("This are the unc on linear fits: ", linFit_unc)
+        print ("   Their sum ", sum(linFit_unc), " lenght is ", len(linFit_unc), "...")
+        linFit_aveUnc =  sum(linFit_unc)/ len(linFit_unc)
+        print ("   So the average unc: ", linFit_aveUnc)
+        print ("Final unc on to quote in the note is the sum in quadrature: ", math.sqrt(errMean*errMean + linFit_aveUnc*linFit_aveUnc))
 
     c3 =  ROOT.TCanvas('slopeVsBar_%s_refTh%02d'%(graphname, refth),'slopeVsBar_%s_refTh%02d'%(graphname, refth),600,500)
     c3.Clear()
