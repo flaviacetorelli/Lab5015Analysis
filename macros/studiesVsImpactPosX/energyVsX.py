@@ -112,10 +112,10 @@ elif args.label == 'HPK_2E14_C25_LYSO100056_Vov1.50_T-35C':
   goodBars = {
            #5: [0,1, 2, 3, 4, 5,  6, 7, 8, 9, 10, 11, 12, 13, 14, 15], #not particularly good
            #7: [0,1, 2, 3, 4, 5,  6, 7, 8, 9, 10, 11, 12, 13, 14, 15], #only few bars have good MIP peak
-           11: [0,1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15],
+           #11: [0,1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15],
            15: [0,1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15],
-           20: [0,1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15],
-           25: [0, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 15]
+           #20: [0,1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15],
+           #25: [0, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 15]
            }
   vov = 1.50
   refbarmin = 4
@@ -144,12 +144,12 @@ elif args.label == 'HPK_nonIrr_C25_LYSO818_Vov3.50_T5C':
 
 elif args.label == 'HPK_nonIrr_C25_LYSO818_Vov1.00_T5C':
   goodBars = {
-           5: [0,1, 2, 3, 4, 5, 7, 8, 9, 10, 11, 12, 13, 14, 15],
-           7: [0,1, 2, 3, 4, 5,  8, 9, 10, 11, 12, 13, 14, 15],
-           11: [0,1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15],
+           #5: [0,1, 2, 3, 4, 5, 7, 8, 9, 10, 11, 12, 13, 14, 15],
+           #7: [0,1, 2, 3, 4, 5,  8, 9, 10, 11, 12, 13, 14, 15],
+           #11: [0,1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15],
            15: [0,1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15],
-           20: [0,1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15],
-           25: [0,1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15]
+           #20: [0,1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15],
+           #25: [0,1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15]
            }
   vov = 1.00
   refbarmin = 4
@@ -216,6 +216,7 @@ for refth, goodbars in goodBars.items():
     print ("Ref is %02d, good bars are: "%refth, goodBars [refth])
     Escale = {} # to store MPV of L-R to normalize E peak
     g_energy_vs_x = OrderedDict()
+    linFit_unc = []
     for bar in goodbars:
         for l in  ['L', 'R', 'L-R']:
             g_energy_vs_x ['%02d%s'%(bar,l)] = ROOT.TGraphErrors()
@@ -248,7 +249,6 @@ for refth, goodbars in goodBars.items():
             gEn.SetPoint(gEn.GetN(), (refbar-offsetX)*barConversionFact, fitFunc.GetParameter(1))
             gEn.SetPointError(gEn.GetN()-1, 0, fitFunc.GetParError(1))
             
-    c1 =  ROOT.TCanvas('c_%s_vs_x_bar'%graphname,'c_%s_vs_x_bar'%graphname,600,500)
     
     
     leg = ROOT.TLegend(0.65,0.7,0.92,0.92)
@@ -273,6 +273,8 @@ for refth, goodbars in goodBars.items():
     tl = ROOT.TLatex() 
     # draw Plots of L-R and do fit to the get MPV for bar
     for bar in goodbars:
+
+        c1 =  ROOT.TCanvas('c_%s_vs_x_bar%02d_ref%02d_beforeNorm'%(graphname, bar, refth),'c_%s_vs_x_bar'%graphname,600,500)
         c1.Clear() 
         c1.SetGridy()
         c1.SetGridx()
@@ -302,11 +304,14 @@ for refth, goodbars in goodBars.items():
                 lin0.SetLineColor(ROOT.kBlack)
                 lin0.Draw("same")
     
-            c1.SaveAs('%s/%s%02d_ref%02d_beforeNorm.png'%(outdir,c1.GetName(), bar, refth ))
+            #c1.SaveAs('%s/%s%02d_ref%02d_beforeNorm.png'%(outdir,c1.GetName(), bar, refth ))
+            c1.SaveAs('%s/%s.png'%(outdir,c1.GetName()))
             #c1.SaveAs(outdir+c1.GetName()+'.pdf')
     
     # draw Plots of E normalized to L-R MPV versus X
     for bar in goodbars:
+
+        c1 =  ROOT.TCanvas('c_%s_vs_x_bar%02d_ref%02d'%(graphname, bar, refth),'c_%s_vs_x_bar'%graphname,600,500)
         c1.Clear() 
         hdummy.GetYaxis().SetRangeUser(0.4, 1.6 )
         c1.SetGridy()
@@ -320,7 +325,7 @@ for refth, goodbars in goodBars.items():
  
         i = 0 # for the tlatex position
         for l in ["L", "R", "L-R"]:
-
+            print ("#####################   " +l+ "  ########################")
             g = g_energy_vs_x ['%02d%s'%(bar,l)]   
             if args.debug:
                 print ("DOING BAR %02d%s  "%(bar,l))
@@ -343,8 +348,7 @@ for refth, goodbars in goodBars.items():
             g.SetLineStyle(1)
             g.SetLineWidth(1)
             g.Draw('p same')
-            g.Fit(lin1, "QNR")
-
+            g.Fit(lin1, "NR")
             
             #lin1.SetLineWidth(1)
             lin1.SetLineStyle(ROOT.kDashed)
@@ -353,8 +357,11 @@ for refth, goodbars in goodBars.items():
             tl.DrawLatex(0.20,0.85-i,"%s fit %.4f x [a.u. / cm] + %.4f"%(l, lin1.GetParameter(1), lin1.GetParameter(0)))
             i = i +0.05
             hSummary[l].Fill(lin1.GetParameter(1))
-            if l == "L" or l == "R": hSummary['allChs'].Fill(abs(lin1.GetParameter(1)))
-        c1.SaveAs('%s/%s%02d_ref%02d.png'%(outdir,c1.GetName(), bar, refth ))
+            if l == "L" or l == "R": 
+                hSummary['allChs'].Fill(abs(lin1.GetParameter(1)))
+                #print (lin1.GetParameter(1))
+                linFit_unc.append(lin1.GetParError(1))
+        c1.SaveAs('%s/%s.png'%(outdir,c1.GetName()))
         #c1.SaveAs(outdir+c1.GetName()+'.pdf')
     
 
@@ -369,9 +376,19 @@ for refth, goodbars in goodBars.items():
         c.cd()
         hSum.Draw("histo")
         hSum.SetTitle("; Slope energy VS x [cm^{-1}] ; ")
+        print (" ************ "+l+" ********************")
+        print ("Mean   --   RMS   -- entries --  errMean")
+        print ("%.4f  --   %.4f   -- %.0f  --   %.6f"%(hSum.GetMean(), hSum.GetRMS(), hSum.GetEntries() , hSum.GetRMS()/math.sqrt(hSum.GetEntries())))
+        errMean = hSum.GetRMS()/math.sqrt(hSum.GetEntries())
+        print ("This are the unc on linear fits: ", linFit_unc)
+        print ("   Their sum ", sum(linFit_unc), " lenght is ", len(linFit_unc), "...")
+        linFit_aveUnc =  sum(linFit_unc)/ len(linFit_unc)
+        print ("   So the average unc: ", linFit_aveUnc)
+        print ("Final unc on to quote in the note is the sum in quadrature: ", math.sqrt(errMean*errMean + linFit_aveUnc*linFit_aveUnc))
 
-        print ("%.3f  --   %.3f   -- %.0f  --   %.3f"%(hSum.GetMean(), hSum.GetRMS(), hSum.GetEntries() , hSum.GetRMS()/math.sqrt(hSum.GetEntries())))
-        text = ROOT.TLatex(0.2, 0.8, "#splitline{#splitline{Histo}{#mu = %.3f #pm %.3f}}{RMS = %.3f #pm %.3f}"%(hSum.GetMean(), hSum.GetMeanError(), hSum.GetRMS(), hSum.GetRMSError()))
+
+        #print ("%.3f  --   %.3f   -- %.0f  --   %.3f"%(hSum.GetMean(), hSum.GetRMS(), hSum.GetEntries() , hSum.GetRMS()/math.sqrt(hSum.GetEntries())))
+        text = ROOT.TLatex(0.18, 0.8, "#splitline{#splitline{Histo}{#mu = %.4f #pm %.4f}}{RMS = %.3f #pm %.3f}"%(hSum.GetMean(), hSum.GetMeanError(), hSum.GetRMS(), hSum.GetRMSError()))
         text.SetNDC()
         text.SetTextSize(0.040)
 
@@ -382,10 +399,10 @@ for refth, goodbars in goodBars.items():
         gausF.SetLineStyle(colors[l])
         hSum.GetXaxis().SetRangeUser(hSum.GetMean()-5*hSum.GetRMS(), hSum.GetMean()+5*hSum.GetRMS())
         gausF.SetRange(gausF.GetParameter(1)-3*gausF.GetParameter(2), gausF.GetParameter(1)+3*gausF.GetParameter(2))
-        hSum.Fit(gausF, "QSR")
+        hSum.Fit(gausF, "QSRN")
 
 
-        gausF.Draw("same")
+        #gausF.Draw("same")
         text.Draw("same")
         c.SaveAs('%s/%s_refTh%02d.png'%(outdir,c.GetName(), refth ))
     
