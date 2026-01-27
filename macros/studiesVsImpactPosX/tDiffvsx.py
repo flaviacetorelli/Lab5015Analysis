@@ -13,11 +13,11 @@ from collections import OrderedDict
 
 import ROOT
 import CMS_lumi, tdrstyle                                                                                                                                               
-                                                                                                                                                                        
+from plots_header import *                                                                                                                                                                        
 #set the tdr style                                                                                                                                                      
 tdrstyle.setTDRStyle()
 ROOT.gStyle.SetOptStat(0)
-ROOT.gStyle.SetOptFit(1)
+ROOT.gStyle.SetOptFit(0)
 ROOT.gStyle.SetOptTitle(0)                                                                                                                                             
 ROOT.gStyle.SetLabelSize(0.055,'X')
 ROOT.gStyle.SetLabelSize(0.055,'Y')
@@ -360,10 +360,10 @@ for refth, goodbars in goodBars.items():
         lin.SetLineStyle(2)
         lin.SetLineColor(ROOT.kBlue+1)
         lin.Draw("same")
-    
+        #cms_logo = draw_logo()
+        #cms_logo.Draw()
+
         c1.SaveAs('%s/%s.png'%(outdir,c1.GetName()))
-        #c1.SaveAs('%s/%s%02d_ref%02d.png'%(outdir,c1.GetName(), bar, refth ))
-        #c1.SaveAs(outdir+c1.GetName()+'.pdf')
     
         # now all toghether
         c2.SetGridy()
@@ -384,32 +384,35 @@ for refth, goodbars in goodBars.items():
      
         hSummary.Fill(lin.GetParameter(1))
         gVsBar[refth].SetPoint(gVsBar[refth].GetN(), bar, abs(lin.GetParameter(1)) )
-    
+        print (abs(lin.GetParameter(1)) )
     c2.SaveAs('%s/%s_refTh%02d.png'%(outdir,c2.GetName(), refth))
     c =  ROOT.TCanvas('LCSlope_summary_%s_refTh%02d'%(graphname, refth),'LCSlope_summary_%s_refTh%02d'%(graphname, refth),600,500)
     c.cd()
     hSummary.Draw("histo")
-    hSummary.SetTitle("; Slope tDiff VS x [ps/cm] ; ")
+    hSummary.SetTitle("; Slope #DeltaT VS x [ps/cm] ; ")
 
-    text = ROOT.TLatex(0.62, 0.6, "#splitline{#splitline{Histo}{#mu = %.0f #pm %.0f}}{RMS = %.0f #pm %.0f}"%(hSummary.GetMean(), hSummary.GetMeanError(), hSummary.GetRMS(), hSummary.GetRMSError()))
+    text = ROOT.TLatex(0.62, 0.6, "#splitline{#splitline{Histo}{#mu = %.1f #pm %.1f}}{RMS = %.1f #pm %.1f}"%(hSummary.GetMean(), hSummary.GetMeanError(), hSummary.GetRMS(), hSummary.GetRMSError()))
     text.SetNDC()
     text.SetTextSize(0.040)
 
 
     gausF = ROOT.TF1("gaus", "gaus", -500, 500)
     gausF.SetRange(hSummary.GetMean()-3*hSummary.GetRMS(), hSummary.GetMean()+3*hSummary.GetRMS())
-    hSummary.Fit(gausF, "SR")
+    hSummary.Fit(gausF, "SRN")
     gausF.SetLineColor(2)
     gausF.SetLineStyle(2)
-    gausF.Draw("same")
+    #gausF.Draw("same")
     text.Draw("same")
+    #cms_logo = draw_logo()
+    #cms_logo.Draw()
+
     c.SaveAs('%s/%s.png'%(outdir,c.GetName()))
 
     gVsTh.SetPoint(gVsTh.GetN(), refth, abs(gausF.GetParameter(1)))
     gVsTh.SetPointError(gVsTh.GetN()-1, 0, gausF.GetParError(1))
     if refth == 15: ## Values to put in the note
         print ("Mean   --   RMS   -- entries --  errMean")
-        print ("%.3f  --   %.3f   -- %.0f  --   %.3f"%(hSummary.GetMean(), hSummary.GetRMS(), hSummary.GetEntries() , hSummary.GetRMS()/math.sqrt(hSummary.GetEntries())))
+        print ("%.6f  --   %.3f   -- %.0f  --   %.3f"%(hSummary.GetMean(), hSummary.GetRMS(), hSummary.GetEntries() , hSummary.GetRMS()/math.sqrt(hSummary.GetEntries())))
         errMean = hSummary.GetRMS()/math.sqrt(hSummary.GetEntries())
         print ("This are the unc on linear fits: ", linFit_unc)
         print ("   Their sum ", sum(linFit_unc), " lenght is ", len(linFit_unc), "...")
